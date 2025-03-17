@@ -1,0 +1,876 @@
+===========================
+Labeled tuple expressions
+===========================
+
+~x:x, ~x:x;;
+(~x:x, ~x:x);;
+(~x:x, x);;
+~x:x, ~x:x, ~x:x;;
+~x:x, ~(x : t);;
+
+---
+
+(compilation_unit
+  (expression_item
+    (product_expression
+      (label_name)
+      (value_path
+        (value_name))
+      (label_name)
+      (value_path
+        (value_name))))
+  (expression_item
+    (parenthesized_expression
+      (product_expression
+        (label_name)
+        (value_path
+          (value_name))
+        (label_name)
+        (value_path
+          (value_name)))))
+  (expression_item
+    (parenthesized_expression
+      (product_expression
+        (label_name)
+        (value_path
+          (value_name))
+        (value_path
+          (value_name)))))
+  (expression_item
+    (product_expression
+      (product_expression
+        (label_name)
+        (value_path
+          (value_name))
+        (label_name)
+        (value_path
+          (value_name)))
+      (label_name)
+      (value_path
+        (value_name))))
+  (expression_item
+    (product_expression
+      (label_name)
+      (value_path
+        (value_name))
+      (label_name)
+      (type_constructor_path
+        (type_constructor)))))
+
+===========================
+Labeled tuple patterns
+===========================
+
+function ~x, ~x -> x;;
+function ~x:(x | x), ~(x : t) -> x;;
+function ~x, ~x:x | ~x:x, ~x -> x;;
+function ~x:x, ~x:x -> x;;
+function ~x:(~x, ~x), ~x:(~x, ~x) -> x;;
+
+---
+
+(compilation_unit
+  (expression_item
+    (function_expression
+      (match_case
+        (tuple_pattern
+          (label_name)
+          (label_name))
+        (value_path
+          (value_name)))))
+  (expression_item
+    (function_expression
+      (match_case
+        (tuple_pattern
+          (label_name)
+          (parenthesized_pattern
+            (or_pattern
+              (value_name)
+              (value_name)))
+          (label_name)
+          (type_constructor_path
+            (type_constructor)))
+        (value_path
+          (value_name)))))
+  (expression_item
+    (function_expression
+      (match_case
+        (or_pattern
+          (tuple_pattern
+            (label_name)
+            (label_name)
+            (value_name))
+          (tuple_pattern
+            (label_name)
+            (value_name)
+            (label_name)))
+        (value_path
+          (value_name)))))
+  (expression_item
+    (function_expression
+      (match_case
+        (tuple_pattern
+          (label_name)
+          (value_name)
+          (label_name)
+          (value_name))
+        (value_path
+          (value_name)))))
+  (expression_item
+    (function_expression
+      (match_case
+        (tuple_pattern
+          (label_name)
+          (parenthesized_pattern
+            (tuple_pattern
+              (label_name)
+              (label_name)))
+          (label_name)
+          (parenthesized_pattern
+            (tuple_pattern
+              (label_name)
+              (label_name))))
+        (value_path
+          (value_name))))))
+
+===========================
+Labeled tuple pattern with ellipsis
+===========================
+
+function ~x, ~x, .. -> x
+
+---
+
+(compilation_unit
+  (expression_item
+    (function_expression
+      (match_case
+        (tuple_pattern
+          (tuple_pattern
+            (label_name)
+            (label_name)))
+        (value_path
+          (value_name))))))
+
+===========================
+Labeled tuple binding patterns
+===========================
+
+let ~x, ~x = x;;
+let x, ~x = x;;
+let ~x, x = x;;
+let (~x, ~x), ~x = x;;
+let ~x, ~x:(~x, ~x) = x;;
+let ~x:x, ~x = x;;
+let ~x:(x | x), ~x = x;;
+let ~x:x, x = x;;
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (tuple_pattern
+        (label_name)
+        (label_name))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (tuple_pattern
+        (value_name)
+        (label_name))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (tuple_pattern
+        (label_name)
+        (value_name))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (tuple_pattern
+        (parenthesized_pattern
+          (tuple_pattern
+            (label_name)
+            (label_name)))
+        (label_name))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (tuple_pattern
+        (label_name)
+        (label_name)
+        (parenthesized_pattern
+          (tuple_pattern
+            (label_name)
+            (label_name))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (tuple_pattern
+        (label_name)
+        (value_name)
+        (label_name))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (tuple_pattern
+        (label_name)
+        (parenthesized_pattern
+          (or_pattern
+            (value_name)
+            (value_name)))
+        (label_name))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (tuple_pattern
+        (label_name)
+        (value_name)
+        (value_name))
+      (value_path
+        (value_name)))))
+
+===========================
+Labeled tuple binding pattern with ellipsis
+===========================
+
+let ~x, ~x, .. = x
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (tuple_pattern
+        (tuple_pattern
+          (label_name)
+          (label_name)))
+      (value_path
+        (value_name)))))
+
+===========================
+Labeled tuples in local opens
+===========================
+
+M.(~a, ~b, ~c);;
+function M.(~a, ~b, ~c) -> ();;
+
+---
+
+(compilation_unit
+  (expression_item
+    (local_open_expression
+      (module_path
+        (module_name))
+      (product_expression
+        (product_expression
+          (label_name)
+          (label_name))
+        (label_name))))
+  (expression_item
+    (function_expression
+      (match_case
+        (local_open_pattern
+          (module_path
+            (module_name))
+          (tuple_pattern
+            (tuple_pattern
+              (label_name)
+              (label_name))
+            (label_name)))
+        (unit)))))
+
+===========================
+Labeled tuple types
+===========================
+
+type t = l:t * l:t;;
+type t = l:t * t;;
+type t = t * l:t;;
+type t = l:t * l:t * l:t;;
+type t = l:t * t * l:t * t;;
+type t = l:(l:t * l:t) * l:t;;
+type t = l:t * l:(l:t * l:t);;
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (tuple_type_with_leading_label
+        (label_name)
+        (proper_tuple_type
+          (type_constructor_path
+            (type_constructor))
+          (label_name)
+          (type_constructor_path
+            (type_constructor))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (tuple_type_with_leading_label
+        (label_name)
+        (proper_tuple_type
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (proper_tuple_type
+        (type_constructor_path
+          (type_constructor))
+        (label_name)
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (tuple_type_with_leading_label
+        (label_name)
+        (proper_tuple_type
+          (type_constructor_path
+            (type_constructor))
+          (label_name)
+          (type_constructor_path
+            (type_constructor))
+          (label_name)
+          (type_constructor_path
+            (type_constructor))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (tuple_type_with_leading_label
+        (label_name)
+        (proper_tuple_type
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor))
+          (label_name)
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (tuple_type_with_leading_label
+        (label_name)
+        (proper_tuple_type
+          (parenthesized_type
+            (tuple_type_with_leading_label
+              (label_name)
+              (proper_tuple_type
+                (type_constructor_path
+                  (type_constructor))
+                (label_name)
+                (type_constructor_path
+                  (type_constructor)))))
+          (label_name)
+          (type_constructor_path
+            (type_constructor))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (tuple_type_with_leading_label
+        (label_name)
+        (proper_tuple_type
+          (type_constructor_path
+            (type_constructor))
+          (label_name)
+          (parenthesized_type
+            (tuple_type_with_leading_label
+              (label_name)
+              (proper_tuple_type
+                (type_constructor_path
+                  (type_constructor))
+                (label_name)
+                (type_constructor_path
+                  (type_constructor))))))))))
+
+===========================
+Labeled tuple types in function types
+===========================
+
+type t = l:t * l:t -> t;;
+type t = l:(t * l:t) -> t;;
+type t = l:(l:t * l:t) -> t;;
+type t = ?l:(l:t * l:t) -> t;;
+type t = l:t * l:t -> t -> t;;
+type t = l:(t * l:t) -> t -> t;;
+type t = (l:t * l:t) -> t;;
+type t = l:t -> l:t * l:t * t -> t;;
+type t = l:(t * l:t) * t -> t;;
+type t = t * l:t -> t;;
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (proper_tuple_type
+            (type_constructor_path
+              (type_constructor))
+            (label_name)
+            (type_constructor_path
+              (type_constructor))))
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (parenthesized_type
+            (proper_tuple_type
+              (type_constructor_path
+                (type_constructor))
+              (label_name)
+              (type_constructor_path
+                (type_constructor)))))
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (parenthesized_type
+            (tuple_type_with_leading_label
+              (label_name)
+              (proper_tuple_type
+                (type_constructor_path
+                  (type_constructor))
+                (label_name)
+                (type_constructor_path
+                  (type_constructor))))))
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (parenthesized_type
+            (tuple_type_with_leading_label
+              (label_name)
+              (proper_tuple_type
+                (type_constructor_path
+                  (type_constructor))
+                (label_name)
+                (type_constructor_path
+                  (type_constructor))))))
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (proper_tuple_type
+            (type_constructor_path
+              (type_constructor))
+            (label_name)
+            (type_constructor_path
+              (type_constructor))))
+        (function_type
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (parenthesized_type
+            (proper_tuple_type
+              (type_constructor_path
+                (type_constructor))
+              (label_name)
+              (type_constructor_path
+                (type_constructor)))))
+        (function_type
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (parenthesized_type
+          (tuple_type_with_leading_label
+            (label_name)
+            (proper_tuple_type
+              (type_constructor_path
+                (type_constructor))
+              (label_name)
+              (type_constructor_path
+                (type_constructor)))))
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (type_constructor_path
+            (type_constructor)))
+        (function_type
+          (typed_label
+            (label_name)
+            (proper_tuple_type
+              (type_constructor_path
+                (type_constructor))
+              (label_name)
+              (type_constructor_path
+                (type_constructor))
+              (type_constructor_path
+                (type_constructor))))
+          (type_constructor_path
+            (type_constructor))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (proper_tuple_type
+            (parenthesized_type
+              (proper_tuple_type
+                (type_constructor_path
+                  (type_constructor))
+                (label_name)
+                (type_constructor_path
+                  (type_constructor))))
+            (type_constructor_path
+              (type_constructor))))
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (proper_tuple_type
+          (type_constructor_path
+            (type_constructor))
+          (label_name)
+          (type_constructor_path
+            (type_constructor)))
+        (type_constructor_path
+          (type_constructor))))))
+
+===========================
+Labeled tuple types as function return types
+===========================
+
+type t = t -> l:t * l:t;;
+type t = t -> t -> l:t * l:t;;
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (type_constructor_path
+          (type_constructor))
+        (tuple_type_with_leading_label
+          (label_name)
+          (proper_tuple_type
+            (type_constructor_path
+              (type_constructor))
+            (label_name)
+            (type_constructor_path
+              (type_constructor)))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (type_constructor_path
+          (type_constructor))
+        (function_type
+          (type_constructor_path
+            (type_constructor))
+          (tuple_type_with_leading_label
+            (label_name)
+            (proper_tuple_type
+              (type_constructor_path
+                (type_constructor))
+              (label_name)
+              (type_constructor_path
+                (type_constructor)))))))))
+
+===========================
+Function types that include labels but don't involve labeled tuple types
+===========================
+
+type t = l:t -> t;;
+type t = l:t * t -> t;;
+type t = l:(t * t) -> t;;
+type t = l:t * t -> t -> t;;
+type t = l:(t * t) -> t -> t;;
+type t = l:(t -> t) -> t;;
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (type_constructor_path
+            (type_constructor)))
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (proper_tuple_type
+            (type_constructor_path
+              (type_constructor))
+            (type_constructor_path
+              (type_constructor))))
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (parenthesized_type
+            (proper_tuple_type
+              (type_constructor_path
+                (type_constructor))
+              (type_constructor_path
+                (type_constructor)))))
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (proper_tuple_type
+            (type_constructor_path
+              (type_constructor))
+            (type_constructor_path
+              (type_constructor))))
+        (function_type
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (parenthesized_type
+            (proper_tuple_type
+              (type_constructor_path
+                (type_constructor))
+              (type_constructor_path
+                (type_constructor)))))
+        (function_type
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (parenthesized_type
+            (function_type
+              (type_constructor_path
+                (type_constructor))
+              (type_constructor_path
+                (type_constructor)))))
+        (type_constructor_path
+          (type_constructor))))))
+
+===========================
+Labeled tuples in class definitions
+===========================
+
+class c : l:t * l:t -> c = object end;;
+class c : t * l:t -> c = object end;;
+class c : l:t * l:t -> l:t * l:t -> c = object end;;
+class c : l:(t * l:t) -> c = object end;;
+
+---
+
+(compilation_unit
+  (class_definition
+    (class_binding
+      (class_name)
+      (class_function_type
+        (typed_label
+          (label_name)
+          (proper_tuple_type
+            (type_constructor_path
+              (type_constructor))
+            (label_name)
+            (type_constructor_path
+              (type_constructor))))
+        (class_type_path
+          (class_type_name)))
+      (object_expression)))
+  (class_definition
+    (class_binding
+      (class_name)
+      (class_function_type
+        (proper_tuple_type
+          (type_constructor_path
+            (type_constructor))
+          (label_name)
+          (type_constructor_path
+            (type_constructor)))
+        (class_type_path
+          (class_type_name)))
+      (object_expression)))
+  (class_definition
+    (class_binding
+      (class_name)
+      (class_function_type
+        (typed_label
+          (label_name)
+          (proper_tuple_type
+            (type_constructor_path
+              (type_constructor))
+            (label_name)
+            (type_constructor_path
+              (type_constructor))))
+        (class_function_type
+          (typed_label
+            (label_name)
+            (proper_tuple_type
+              (type_constructor_path
+                (type_constructor))
+              (label_name)
+              (type_constructor_path
+                (type_constructor))))
+          (class_type_path
+            (class_type_name))))
+      (object_expression)))
+  (class_definition
+    (class_binding
+      (class_name)
+      (class_function_type
+        (typed_label
+          (label_name)
+          (parenthesized_type
+            (proper_tuple_type
+              (type_constructor_path
+                (type_constructor))
+              (label_name)
+              (type_constructor_path
+                (type_constructor)))))
+        (class_type_path
+          (class_type_name)))
+      (object_expression))))
+
+===========================
+Labeled tuples in module type definitions
+===========================
+
+module type T = S with type t := l:t * t -> t;;
+module type T = S with type t := l:t * l:t -> t;;
+module type T = S with type t := l:t * l:t -> t -> t;;
+
+---
+
+(compilation_unit
+  (module_type_definition
+    (module_type_name)
+    (module_type_constraint
+      (module_type_path
+        (module_type_name))
+      (constrain_type
+        (type_constructor_path
+          (type_constructor))
+        (function_type
+          (typed_label
+            (label_name)
+            (proper_tuple_type
+              (type_constructor_path
+                (type_constructor))
+              (type_constructor_path
+                (type_constructor))))
+          (type_constructor_path
+            (type_constructor))))))
+  (module_type_definition
+    (module_type_name)
+    (module_type_constraint
+      (module_type_path
+        (module_type_name))
+      (constrain_type
+        (type_constructor_path
+          (type_constructor))
+        (function_type
+          (typed_label
+            (label_name)
+            (proper_tuple_type
+              (type_constructor_path
+                (type_constructor))
+              (label_name)
+              (type_constructor_path
+                (type_constructor))))
+          (type_constructor_path
+            (type_constructor))))))
+  (module_type_definition
+    (module_type_name)
+    (module_type_constraint
+      (module_type_path
+        (module_type_name))
+      (constrain_type
+        (type_constructor_path
+          (type_constructor))
+        (function_type
+          (typed_label
+            (label_name)
+            (proper_tuple_type
+              (type_constructor_path
+                (type_constructor))
+              (label_name)
+              (type_constructor_path
+                (type_constructor))))
+          (function_type
+            (type_constructor_path
+              (type_constructor))
+            (type_constructor_path
+              (type_constructor))))))))

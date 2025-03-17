@@ -77,12 +77,69 @@ module M : module type of M
       (module_type_of (module_path (module_name))))))
 
 ==============================
+Module type with
+==============================
+
+module type T = T with M
+module type T = T with M.M(M.M)
+module M : T with M = M
+module M (A : T with M) = M
+
+---
+
+(compilation_unit
+  (module_type_definition
+    (module_type_name)
+    (module_type_constraint
+      (module_type_path
+        (module_type_name))
+      (extended_module_path
+        (module_name))))
+  (module_type_definition
+    (module_type_name)
+    (module_type_constraint
+      (module_type_path
+        (module_type_name))
+      (extended_module_path
+        (extended_module_path
+          (extended_module_path
+            (module_name))
+          (module_name))
+        (extended_module_path
+          (extended_module_path
+            (module_name))
+          (module_name)))))
+  (module_definition
+    (module_binding
+      (module_name)
+      (module_type_constraint
+        (module_type_path
+          (module_type_name))
+        (extended_module_path
+          (module_name)))
+      (module_path
+        (module_name))))
+  (module_definition
+    (module_binding
+      (module_name)
+      (module_parameter
+        (module_name)
+        (module_type_constraint
+          (module_type_path
+            (module_type_name))
+          (extended_module_path
+            (module_name))))
+      (module_path
+        (module_name)))))
+
+==============================
 Functor types
 ==============================
 
 module M : functor (M : T) -> T
 module M : T -> T -> T
 module M : () -> T
+module M : sig end -> sig end
 
 ---
 
@@ -107,7 +164,13 @@ module M : () -> T
     (module_binding
       (module_name)
       (functor_type
-        (module_type_path (module_type_name))))))
+        (module_type_path (module_type_name)))))
+  (module_definition
+    (module_binding
+      (module_name)
+      (functor_type
+        (signature)
+        (signature)))))
 
 ==============================
 Parenthesized module types

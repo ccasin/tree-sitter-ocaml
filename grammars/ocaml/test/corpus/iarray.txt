@@ -1,0 +1,92 @@
+===========================
+iarray expressions
+===========================
+
+[::];;
+[: x; x; x :];;
+[: x; x; x; :];;
+
+---
+
+(compilation_unit
+  (expression_item
+    (iarray_expression))
+  (expression_item
+    (iarray_expression
+      (value_path
+        (value_name))
+      (value_path
+        (value_name))
+      (value_path
+        (value_name))))
+  (expression_item
+    (iarray_expression
+      (value_path
+        (value_name))
+      (value_path
+        (value_name))
+      (value_path
+        (value_name)))))
+
+===========================
+iarray patterns
+===========================
+
+function [::] | [: x :] | [: x; y; :] -> ()
+
+---
+
+(compilation_unit
+  (expression_item
+    (function_expression
+      (match_case
+        (or_pattern
+          (or_pattern
+            (iarray_pattern)
+            (iarray_pattern
+              (value_name)))
+          (iarray_pattern
+            (value_name)
+            (value_name)))
+        (unit)))))
+
+===========================
+Local open patterns with iarrays
+===========================
+
+function M.[::] | M.[: x :] -> ()
+
+---
+
+(compilation_unit
+  (expression_item
+    (function_expression
+      (match_case
+        (or_pattern
+          (local_open_pattern
+            (module_path
+              (module_name))
+            (iarray_pattern))
+          (local_open_pattern
+            (module_path
+              (module_name))
+            (iarray_pattern
+              (value_name))))
+        (unit)))))
+
+===========================
+iarray get operator
+===========================
+
+x.:(2)
+
+---
+
+(compilation_unit
+  (expression_item
+    (array_get_expression
+      (value_path
+        (value_name))
+      (indexing_operator_path
+        (indexing_operator))
+      (number))))

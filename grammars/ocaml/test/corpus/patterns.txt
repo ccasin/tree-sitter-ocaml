@@ -10,10 +10,10 @@ function \#function -> ();;
 (compilation_unit
   (expression_item
     (function_expression
-      (match_case (value_pattern) (unit))))
+      (match_case (value_name) (unit))))
   (expression_item
     (function_expression
-      (match_case (value_pattern) (unit)))))
+      (match_case (value_name) (unit)))))
 
 ============================
 Constant patterns
@@ -55,7 +55,7 @@ function (x : t) -> ()
     (function_expression
       (match_case
         (typed_pattern
-          (value_pattern)
+          (value_name)
           (type_constructor_path (type_constructor)))
         (unit)))))
 
@@ -76,10 +76,10 @@ function A x | A | `A | `A x -> ()
             (or_pattern
               (constructor_pattern
                 (constructor_path (constructor_name))
-                (value_pattern))
+                (value_name))
               (constructor_path (constructor_name)))
             (tag))
-          (tag_pattern (tag) (value_pattern)))
+          (tag_pattern (tag) (value_name)))
         (unit)))))
 
 ============================
@@ -116,10 +116,10 @@ function {x} | [x] | [|x|] | [|x;y;|] | x :: xs -> ()
               (or_pattern
                 (record_pattern
                   (field_pattern (field_path (field_name))))
-                (list_pattern (value_pattern)))
-              (array_pattern (value_pattern)))
-            (array_pattern (value_pattern) (value_pattern)))
-          (cons_pattern (value_pattern) (value_pattern)))
+                (list_pattern (value_name)))
+              (array_pattern (value_name)))
+            (array_pattern (value_name) (value_name)))
+          (cons_pattern (value_name) (value_name)))
         (unit)))))
 
 ============================
@@ -139,10 +139,10 @@ function M.(A x) | M.[x] -> ()
             (module_path (module_name))
             (constructor_pattern
               (constructor_path (constructor_name))
-              (value_pattern)))
+              (value_name)))
           (local_open_pattern
             (module_path (module_name))
-            (list_pattern (value_pattern))))
+            (list_pattern (value_name))))
         (unit)))))
 
 ============================
@@ -172,7 +172,7 @@ function x as t -> ()
   (expression_item
     (function_expression
       (match_case
-        (alias_pattern (value_pattern) (value_pattern))
+        (alias_pattern (value_name) (value_name))
         (unit)))))
 
 ============================
@@ -189,9 +189,9 @@ function x, x, x -> ()
       (match_case
         (tuple_pattern
           (tuple_pattern
-            (value_pattern)
-            (value_pattern))
-          (value_pattern))
+            (value_name)
+            (value_name))
+          (value_name))
         (unit)))))
 
 ============================
@@ -220,7 +220,7 @@ function lazy x -> ()
 (compilation_unit
   (expression_item
     (function_expression
-      (match_case (lazy_pattern (value_pattern))
+      (match_case (lazy_pattern (value_name))
       (unit)))))
 
 ============================
@@ -235,5 +235,284 @@ function (x) -> ()
   (expression_item
     (function_expression
       (match_case
-        (parenthesized_pattern (value_pattern))
+        (parenthesized_pattern (value_name))
         (unit)))))
+
+==============================
+Abstract types in constructor patterns
+==============================
+
+function A (type a) x | A (type a) (x : a) -> ()
+
+---
+
+(compilation_unit
+  (expression_item
+    (function_expression
+      (match_case
+        (or_pattern
+          (constructor_pattern
+            (constructor_path
+              (constructor_name))
+            (abstract_types
+              (type_constructor))
+            (value_name))
+          (constructor_pattern
+            (constructor_path
+              (constructor_name))
+            (abstract_types
+              (type_constructor))
+            (typed_pattern
+              (value_name)
+              (type_constructor_path
+                (type_constructor)))))
+        (unit)))))
+
+==============================
+Abstract types in constructor binding patterns
+==============================
+
+let A (type a) x = x
+let A (type a) (x : a) = x
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (constructor_pattern
+        (constructor_path
+          (constructor_name))
+        (abstract_types
+          (type_constructor))
+        (value_name))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (constructor_pattern
+        (constructor_path
+          (constructor_name))
+        (abstract_types
+          (type_constructor))
+        (typed_pattern
+          (value_name)
+          (type_constructor_path
+            (type_constructor))))
+      (value_path
+        (value_name)))))
+
+============================
+Nested patterns
+============================
+
+function ((((x)))) | [[[[ x ]]]] -> ()
+
+---
+
+(compilation_unit
+  (expression_item
+    (function_expression
+      (match_case
+        (or_pattern
+          (parenthesized_pattern
+            (parenthesized_pattern
+              (parenthesized_pattern
+                (parenthesized_pattern
+                  (value_name)))))
+          (list_pattern
+            (list_pattern
+              (list_pattern
+                (list_pattern
+                  (value_name))))))
+        (unit)))))
+
+============================
+Nested patterns in let bindings
+============================
+
+let ((((x)))) | [[[[ x ]]]] = x
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (or_pattern
+        (parenthesized_pattern
+          (parenthesized_pattern
+            (parenthesized_pattern
+              (parenthesized_pattern
+                (value_name)))))
+        (list_pattern
+          (list_pattern
+            (list_pattern
+              (list_pattern
+                (value_name))))))
+      (value_path
+        (value_name)))))
+
+============================
+Exception patterns
+============================
+
+function
+| exception e -> ()
+| (exception e) -> ()
+| [ exception e ] -> ()
+| exception (e, e) -> ()
+| exception [ e; e ] -> ()
+| (exception e | exception e) -> ()
+| (exception e), (exception e) -> ()
+| (exception e) :: x -> ()
+| exception exception e -> ()
+
+---
+
+(compilation_unit
+  (expression_item
+    (function_expression
+      (match_case
+        (exception_pattern
+          (value_name))
+        (unit))
+      (match_case
+        (parenthesized_pattern
+          (exception_pattern
+            (value_name)))
+        (unit))
+      (match_case
+        (list_pattern
+          (exception_pattern
+            (value_name)))
+        (unit))
+      (match_case
+        (exception_pattern
+          (parenthesized_pattern
+            (tuple_pattern
+              (value_name)
+              (value_name))))
+        (unit))
+      (match_case
+        (exception_pattern
+          (list_pattern
+            (value_name)
+            (value_name)))
+        (unit))
+      (match_case
+        (parenthesized_pattern
+          (exception_pattern
+            (or_pattern
+              (value_name)
+              (exception_pattern
+                (value_name)))))
+        (unit))
+      (match_case
+        (tuple_pattern
+          (parenthesized_pattern
+            (exception_pattern
+              (value_name)))
+          (parenthesized_pattern
+            (exception_pattern
+              (value_name))))
+        (unit))
+      (match_case
+        (cons_pattern
+          (parenthesized_pattern
+            (exception_pattern
+              (value_name)))
+          (value_name))
+        (unit))
+      (match_case
+        (exception_pattern
+          (exception_pattern
+            (value_name)))
+        (unit)))))
+
+============================
+Exception patterns in let bindings
+============================
+
+let (exception e) = x
+let [ exception e ] = x
+let (exception (e, e)) = x
+let (exception [ e; e ]) = x
+let (exception e | exception e) = x
+let (exception e), (exception e) = x
+let (exception e) :: x = x
+let (exception exception e) = x
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (parenthesized_pattern
+        (exception_pattern
+          (value_name)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (list_pattern
+        (exception_pattern
+          (value_name)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (parenthesized_pattern
+        (exception_pattern
+          (parenthesized_pattern
+            (tuple_pattern
+              (value_name)
+              (value_name)))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (parenthesized_pattern
+        (exception_pattern
+          (list_pattern
+            (value_name)
+            (value_name))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (parenthesized_pattern
+        (exception_pattern
+          (or_pattern
+            (value_name)
+            (exception_pattern
+              (value_name)))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (tuple_pattern
+        (parenthesized_pattern
+          (exception_pattern
+            (value_name)))
+        (parenthesized_pattern
+          (exception_pattern
+            (value_name))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (cons_pattern
+        (parenthesized_pattern
+          (exception_pattern
+            (value_name)))
+        (value_name))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (parenthesized_pattern
+        (exception_pattern
+          (exception_pattern
+            (value_name))))
+      (value_path
+        (value_name)))))

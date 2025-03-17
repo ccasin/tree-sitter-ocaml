@@ -1,0 +1,723 @@
+==============================
+Modes in expressions
+==============================
+
+(x : t @@ m1 m2)
+let x = (x : t @@ m1 m2)
+
+---
+
+(compilation_unit
+  (expression_item
+    (typed_expression
+      (value_path
+        (value_name))
+      (type_constructor_path
+        (type_constructor))
+      (atat_mode_expr
+        (mode)
+        (mode))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (typed_expression
+        (value_path
+          (value_name))
+        (type_constructor_path
+          (type_constructor))
+        (atat_mode_expr
+          (mode)
+          (mode))))))
+
+==============================
+Modalities in record fields
+==============================
+
+type t = { x : t @@ m }
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (record_declaration
+        (field_declaration
+          (field_name)
+          (type_constructor_path
+            (type_constructor))
+          (atat_modality_expr
+            (modality_expr
+              (modality))))))))
+
+==============================
+Modalities on constructor arguments
+==============================
+
+type t = A of t @@ m * t @@ m
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (variant_declaration
+        (constructor_declaration
+          (constructor_name)
+          (type_constructor_path
+            (type_constructor))
+          (atat_modality_expr
+            (modality_expr
+              (modality)))
+          (type_constructor_path
+            (type_constructor))
+          (atat_modality_expr
+            (modality_expr
+              (modality))))))))
+
+==============================
+Modes in patterns
+==============================
+
+function (x @ m), (x @ m) -> x;;
+function (x : t @@ m), (x : t @@ m) -> x;;
+
+---
+
+(compilation_unit
+  (expression_item
+    (function_expression
+      (match_case
+        (tuple_pattern
+          (pattern_with_modes
+            (value_name)
+            (at_mode_expr
+              (mode)))
+          (pattern_with_modes
+            (value_name)
+            (at_mode_expr
+              (mode))))
+        (value_path
+          (value_name)))))
+  (expression_item
+    (function_expression
+      (match_case
+        (tuple_pattern
+          (typed_pattern
+            (value_name)
+            (type_constructor_path
+              (type_constructor))
+            (atat_mode_expr
+              (mode)))
+          (typed_pattern
+            (value_name)
+            (type_constructor_path
+              (type_constructor))
+            (atat_mode_expr
+              (mode))))
+        (value_path
+          (value_name))))))
+
+==============================
+Modes in binding patterns
+==============================
+
+let x @ m = x
+let (x @ m), (x @ m) = x
+let (x : t @@ m), (x : t @@ m) = x
+let x : t @@ m1 m2 = x
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (value_name)
+      (at_mode_expr
+        (mode))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (tuple_pattern
+        (pattern_with_modes
+          (value_name)
+          (at_mode_expr
+            (mode)))
+        (pattern_with_modes
+          (value_name)
+          (at_mode_expr
+            (mode))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (tuple_pattern
+        (typed_pattern
+          (value_name)
+          (type_constructor_path
+            (type_constructor))
+          (atat_mode_expr
+            (mode)))
+        (typed_pattern
+          (value_name)
+          (type_constructor_path
+            (type_constructor))
+          (atat_mode_expr
+            (mode))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (type_constructor_path
+        (type_constructor))
+      (atat_mode_expr
+        (mode)
+        (mode))
+      (value_path
+        (value_name)))))
+
+==============================
+Modes in let bindings
+==============================
+
+let x @ m1 m2 = x
+let x : t @@ m1 m2 = x
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (value_name)
+      (at_mode_expr
+        (mode)
+        (mode))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (type_constructor_path
+        (type_constructor))
+      (atat_mode_expr
+        (mode)
+        (mode))
+      (value_path
+        (value_name)))))
+
+==============================
+Modes in let-bound functions
+==============================
+
+let (f @ m) x = x
+let f (x @ m) (x : t @@ m) = x
+let f ~(x @ m) ~(x : t @@ m) = x
+let f ?(x @ m) ?(x : t @@ m) = x
+let f ?(x @ m = x) ?(x : t @@ m = x) = x
+let f ~l:(x @ m) ~l:(x : t @@ m) = x
+let f ?l:(x @ m) ?l:(x : t @@ m) = x
+let f ?l:(x @ m = x) ?l:(x : t @@ m = x) = x
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (pattern_with_modes
+        (value_name)
+        (at_mode_expr
+          (mode)))
+      (parameter
+        (value_name))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (pattern_with_modes
+          (value_name)
+          (at_mode_expr
+            (mode))))
+      (parameter
+        (typed_pattern
+          (value_name)
+          (type_constructor_path
+            (type_constructor))
+          (atat_mode_expr
+            (mode))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (value_pattern)
+        (at_mode_expr
+          (mode)))
+      (parameter
+        (value_pattern)
+        (type_constructor_path
+          (type_constructor))
+        (atat_mode_expr
+          (mode)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (value_pattern)
+        (at_mode_expr
+          (mode)))
+      (parameter
+        (value_pattern)
+        (type_constructor_path
+          (type_constructor))
+        (atat_mode_expr
+          (mode)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (value_pattern)
+        (at_mode_expr
+          (mode))
+        (value_path
+          (value_name)))
+      (parameter
+        (value_pattern)
+        (type_constructor_path
+          (type_constructor))
+        (atat_mode_expr
+          (mode))
+        (value_path
+          (value_name)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (pattern_with_modes
+          (value_name)
+          (at_mode_expr
+            (mode))))
+      (parameter
+        (label_name)
+        (typed_pattern
+          (value_name)
+          (type_constructor_path
+            (type_constructor))
+          (atat_mode_expr
+            (mode))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (pattern_with_modes
+          (value_name)
+          (at_mode_expr
+            (mode))))
+      (parameter
+        (label_name)
+        (typed_pattern
+          (value_name)
+          (type_constructor_path
+            (type_constructor))
+          (atat_mode_expr
+            (mode))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (value_name)
+        (at_mode_expr
+          (mode))
+        (value_path
+          (value_name)))
+      (parameter
+        (label_name)
+        (value_name)
+        (type_constructor_path
+          (type_constructor))
+        (atat_mode_expr
+          (mode))
+        (value_path
+          (value_name)))
+      (value_path
+        (value_name)))))
+
+==============================
+Modes in let-bound functions with polymorphic parameters
+==============================
+
+let f (x : 'a. 'a @@ m) = x
+let f ~(x : 'a. 'a @@ m) = x
+let f ?(x : 'a. 'a @@ m) = x
+let f ?(x : 'a. 'a @@ m = x) = x
+let f ~l:(x : 'a. 'a @@ m) = x
+let f ?l:(x : 'a. 'a @@ m) = x
+let f ?l:(x : 'a. 'a @@ m = x) = x
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (polymorphic_typed_pattern
+          (value_name)
+          (polymorphic_type
+            (type_variable)
+            (type_variable))
+          (atat_mode_expr
+            (mode))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (value_pattern)
+        (polymorphic_type
+          (type_variable)
+          (type_variable))
+        (atat_mode_expr
+          (mode)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (value_pattern)
+        (polymorphic_type
+          (type_variable)
+          (type_variable))
+        (atat_mode_expr
+          (mode)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (value_pattern)
+        (polymorphic_type
+          (type_variable)
+          (type_variable))
+        (atat_mode_expr
+          (mode))
+        (value_path
+          (value_name)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (polymorphic_typed_pattern
+          (value_name)
+          (polymorphic_type
+            (type_variable)
+            (type_variable))
+          (atat_mode_expr
+            (mode))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (polymorphic_typed_pattern
+          (value_name)
+          (polymorphic_type
+            (type_variable)
+            (type_variable))
+          (atat_mode_expr
+            (mode))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (value_name)
+        (polymorphic_type
+          (type_variable)
+          (type_variable))
+        (atat_mode_expr
+          (mode))
+        (value_path
+          (value_name)))
+      (value_path
+        (value_name)))))
+
+==============================
+Modes after the parameter list in let-bound functions
+==============================
+
+let f x x @ m1 m2 = x
+let f x x : t @@ m1 m2 = x
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (value_name))
+      (parameter
+        (value_name))
+      (at_mode_expr
+        (mode)
+        (mode))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (value_name))
+      (parameter
+        (value_name))
+      (type_constructor_path
+        (type_constructor))
+      (atat_mode_expr
+        (mode)
+        (mode))
+      (value_path
+        (value_name)))))
+
+==============================
+Modes in list comprehensions
+==============================
+
+[ (x : t @@ m) for (x @ m) in (x : t @@ m) ];;
+[ (x : t @@ m) for (x @ m) = (x : t @@ m) to (x : t @@ m) ];;
+[ (x : t @@ m) for (x @ m) = (x : t @@ m) downto (x : t @@ m) ];;
+
+---
+
+(compilation_unit
+  (expression_item
+    (list_expression
+      (comprehension
+        (typed_expression
+          (value_path
+            (value_name))
+          (type_constructor_path
+            (type_constructor))
+          (atat_mode_expr
+            (mode)))
+        (comprehension_clause
+          (comprehension_iterator
+            (pattern_with_modes
+              (value_name)
+              (at_mode_expr
+                (mode)))
+            (typed_expression
+              (value_path
+                (value_name))
+              (type_constructor_path
+                (type_constructor))
+              (atat_mode_expr
+                (mode))))))))
+  (expression_item
+    (list_expression
+      (comprehension
+        (typed_expression
+          (value_path
+            (value_name))
+          (type_constructor_path
+            (type_constructor))
+          (atat_mode_expr
+            (mode)))
+        (comprehension_clause
+          (comprehension_iterator
+            (pattern_with_modes
+              (value_name)
+              (at_mode_expr
+                (mode)))
+            (typed_expression
+              (value_path
+                (value_name))
+              (type_constructor_path
+                (type_constructor))
+              (atat_mode_expr
+                (mode)))
+            (typed_expression
+              (value_path
+                (value_name))
+              (type_constructor_path
+                (type_constructor))
+              (atat_mode_expr
+                (mode))))))))
+  (expression_item
+    (list_expression
+      (comprehension
+        (typed_expression
+          (value_path
+            (value_name))
+          (type_constructor_path
+            (type_constructor))
+          (atat_mode_expr
+            (mode)))
+        (comprehension_clause
+          (comprehension_iterator
+            (pattern_with_modes
+              (value_name)
+              (at_mode_expr
+                (mode)))
+            (typed_expression
+              (value_path
+                (value_name))
+              (type_constructor_path
+                (type_constructor))
+              (atat_mode_expr
+                (mode)))
+            (typed_expression
+              (value_path
+                (value_name))
+              (type_constructor_path
+                (type_constructor))
+              (atat_mode_expr
+                (mode)))))))))
+
+==============================
+Modes in fun expressions
+==============================
+
+fun (x : t @@ m) -> x
+
+---
+
+(compilation_unit
+  (expression_item
+    (fun_expression
+      (parameter
+        (typed_pattern
+          (value_name)
+          (type_constructor_path
+            (type_constructor))
+          (atat_mode_expr
+            (mode))))
+      (value_path
+        (value_name)))))
+
+==============================
+Modes in value descriptions
+==============================
+
+module type T = sig
+  val x : t @@ m
+end
+
+---
+
+(compilation_unit
+  (module_type_definition
+    (module_type_name)
+    (signature
+      (value_specification
+        (value_name)
+        (type_constructor_path
+          (type_constructor))
+        (atat_mode_expr
+          (mode))))))
+
+==============================
+Modes in function types
+==============================
+
+type t = t @ m -> t @ m
+type t = l:t @ m -> t @ m
+type t = l:t * l:t @ m -> t @ m
+type t = ('a. 'a) @ m -> l:('a. 'a) @ m -> t @ m
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (type_constructor_path
+          (type_constructor))
+        (at_mode_expr
+          (mode))
+        (type_constructor_path
+          (type_constructor))
+        (at_mode_expr
+          (mode)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (type_constructor_path
+            (type_constructor)))
+        (at_mode_expr
+          (mode))
+        (type_constructor_path
+          (type_constructor))
+        (at_mode_expr
+          (mode)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (proper_tuple_type
+            (type_constructor_path
+              (type_constructor))
+            (label_name)
+            (type_constructor_path
+              (type_constructor))))
+        (at_mode_expr
+          (mode))
+        (type_constructor_path
+          (type_constructor))
+        (at_mode_expr
+          (mode)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (polymorphic_type
+          (type_variable)
+          (type_variable))
+        (at_mode_expr
+          (mode))
+        (function_type
+          (polymorphic_typed_label
+            (label_name)
+            (polymorphic_type
+              (type_variable)
+              (type_variable)))
+          (at_mode_expr
+            (mode))
+          (type_constructor_path
+            (type_constructor))
+          (at_mode_expr
+            (mode)))))))

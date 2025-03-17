@@ -69,6 +69,8 @@ Constants
 {xxxxxxxxxxxxxxxxxxxx||xxxxxxxxxxxxxxxxxxxx};;
 true;;
 ();;
+begin end;;
+begin%ext end;;
 
 ---
 
@@ -112,7 +114,9 @@ true;;
   (expression_item (quoted_string (quoted_string_content)))
   (expression_item (quoted_string))
   (expression_item (boolean))
-  (expression_item (unit)))
+  (expression_item (unit))
+  (expression_item (unit))
+  (expression_item (unit (attribute_id))))
 
 ===========================
 Typed expression
@@ -129,7 +133,7 @@ Typed expression
       (type_constructor_path (type_constructor)))))
 
 ===========================
-Lists, arrays and records
+Lists and arrays
 ===========================
 
 [];;
@@ -137,7 +141,6 @@ Lists, arrays and records
 x :: x :: xs;;
 [||];;
 [| x; x; x |];;
-{ x = x; x; };;
 
 ---
 
@@ -159,14 +162,70 @@ x :: x :: xs;;
     (array_expression
       (value_path (value_name))
       (value_path (value_name))
-      (value_path (value_name))))
+      (value_path (value_name)))))
+
+===========================
+Records
+===========================
+
+{ x; x; };;
+{ x = x; x = x; };;
+{ x : t :> t = x; x : t :> t = x; };;
+{ x :> t; x :> t; };;
+
+---
+
+(compilation_unit
+  (expression_item
+    (record_expression
+      (field_expression
+        (field_path
+          (field_name)))
+      (field_expression
+        (field_path
+          (field_name)))))
+  (expression_item
+    (record_expression
+      (field_expression
+        (field_path
+          (field_name))
+        (value_path
+          (value_name)))
+      (field_expression
+        (field_path
+          (field_name))
+        (value_path
+          (value_name)))))
+  (expression_item
+    (record_expression
+      (field_expression
+        (field_path
+          (field_name))
+        (type_constructor_path
+          (type_constructor))
+        (type_constructor_path
+          (type_constructor))
+        (value_path
+          (value_name)))
+      (field_expression
+        (field_path
+          (field_name))
+        (type_constructor_path
+          (type_constructor))
+        (type_constructor_path
+          (type_constructor))
+        (value_path
+          (value_name)))))
   (expression_item
     (record_expression
       (field_expression
         (field_path (field_name))
-        (value_path (value_name)))
+        (type_constructor_path
+          (type_constructor)))
       (field_expression
-        (field_path (field_name))))))
+        (field_path (field_name))
+        (type_constructor_path
+          (type_constructor))))))
 
 ===========================
 Get and set expressions
@@ -439,29 +498,81 @@ if x then y;;
 if x then y else z;;
 while x do y done;;
 for i = 1 to n do x done;;
+for i, j = 1 to n do x done;;
+for (i, j) = 1 to n do x done;;
+for [ i; j ] = 1 to n do x done;;
+for [%ext i] = 1 to n do x done;;
 
 ---
 
 (compilation_unit
-  (expression_item
-    (if_expression
+      (expression_item
+        (if_expression
       (value_path (value_name))
       (then_clause (value_path (value_name)))))
-  (expression_item
-    (if_expression
+      (expression_item
+        (if_expression
       (value_path (value_name))
       (then_clause (value_path (value_name)))
       (else_clause (value_path (value_name)))))
-  (expression_item
-    (while_expression
+      (expression_item
+        (while_expression
+          (value_path (value_name))
+          (do_clause (value_path (value_name)))))
+      (expression_item
+        (for_expression
+          (value_name)
+          (number)
       (value_path (value_name))
       (do_clause (value_path (value_name)))))
-  (expression_item
-    (for_expression
-      (value_pattern)
-      (number)
-      (value_path (value_name))
-      (do_clause (value_path (value_name))))))
+      (expression_item
+        (for_expression
+          (tuple_pattern
+            (value_name)
+            (value_name))
+          (number)
+          (value_path
+            (value_name))
+          (do_clause
+            (value_path
+              (value_name)))))
+      (expression_item
+        (for_expression
+          (parenthesized_pattern
+            (tuple_pattern
+              (value_name)
+              (value_name)))
+          (number)
+          (value_path
+            (value_name))
+          (do_clause
+            (value_path
+              (value_name)))))
+      (expression_item
+        (for_expression
+          (list_pattern
+            (value_name)
+            (value_name))
+          (number)
+          (value_path
+            (value_name))
+          (do_clause
+            (value_path
+              (value_name)))))
+      (expression_item
+        (for_expression
+          (extension
+            (attribute_id)
+            (attribute_payload
+              (expression_item
+                (value_path
+                  (value_name)))))
+          (number)
+          (value_path
+            (value_name))
+          (do_clause
+            (value_path
+              (value_name))))))
 
 ===========================
 Sequence expressions
@@ -497,24 +608,24 @@ match+ x with x -> x;;
     (match_expression
       (value_path (value_name))
       (match_case
-        (value_pattern)
+        (value_name)
         (value_path (value_name)))
       (match_case
-        (value_pattern)
+        (value_name)
         (guard (value_path (value_name)))
         (value_path (value_name)))
       (match_case
-        (or_pattern (value_pattern) (value_pattern))
+        (or_pattern (value_name) (value_name))
         (value_path (value_name)))
       (match_case
-        (exception_pattern (value_pattern))
+        (exception_pattern (value_name))
         (value_path (value_name)))))
   (expression_item
     (match_expression
       (match_operator)
       (value_path (value_name))
       (match_case
-        (value_pattern)
+        (value_name)
         (value_path (value_name))))))
 
 ===========================
@@ -533,15 +644,15 @@ function A (type a) x -> 1;;
         (number)
         (number))
       (match_case
-        (value_pattern)
+        (value_name)
         (number))))
   (expression_item
     (function_expression
       (match_case
         (constructor_pattern
           (constructor_path (constructor_name))
-          (abstract_type (type_constructor))
-          (value_pattern))
+          (abstract_types (type_constructor))
+          (value_name))
         (number)))))
 
 ===========================

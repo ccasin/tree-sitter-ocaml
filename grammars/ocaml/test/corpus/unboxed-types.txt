@@ -1,0 +1,387 @@
+===========================
+Unboxed types
+===========================
+
+type t = t#
+type t = t# -> t#
+type t = t# t
+type t = t# t#
+module type T = T with type t = t#
+let f (x : t#) = x
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (unboxed_type_constructor_path
+        (type_constructor))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (unboxed_type_constructor_path
+          (type_constructor))
+        (unboxed_type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (constructed_type
+        (unboxed_type_constructor_path
+          (type_constructor))
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (constructed_type
+        (unboxed_type_constructor_path
+          (type_constructor))
+        (unboxed_type_constructor_path
+          (type_constructor)))))
+  (module_type_definition
+    (module_type_name)
+    (module_type_constraint
+      (module_type_path
+        (module_type_name))
+      (constrain_type
+        (type_constructor_path
+          (type_constructor))
+        (unboxed_type_constructor_path
+          (type_constructor)))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (typed_pattern
+          (value_name)
+          (unboxed_type_constructor_path
+            (type_constructor))))
+      (value_path
+        (value_name)))))
+
+===========================
+Unboxed numbers
+===========================
+
+#0l;;
+#0L;;
+#0n;;
+#0.;;
+#0.0;;
+#0e0;;
+#0.e0;;
+#0.0e0;;
+#0x0l;;
+#0o0l;;
+#0b0l;;
+
+---
+
+(compilation_unit
+  (expression_item
+    (unboxed_constant))
+  (expression_item
+    (unboxed_constant))
+  (expression_item
+    (unboxed_constant))
+  (expression_item
+    (unboxed_constant))
+  (expression_item
+    (unboxed_constant))
+  (expression_item
+    (unboxed_constant))
+  (expression_item
+    (unboxed_constant))
+  (expression_item
+    (unboxed_constant))
+  (expression_item
+    (unboxed_constant))
+  (expression_item
+    (unboxed_constant))
+  (expression_item
+    (unboxed_constant)))
+
+===========================
+Signed unboxed numbers
+===========================
+
++#0l;;
+-#0l;;
++ #0l;;
+- #0l;;
+
+---
+
+(compilation_unit
+  (expression_item
+    (sign_expression
+      (sign_operator)
+      (unboxed_constant)))
+  (expression_item
+    (sign_expression
+      (sign_operator)
+      (unboxed_constant)))
+  (expression_item
+    (sign_expression
+      (sign_operator)
+      (unboxed_constant)))
+  (expression_item
+    (sign_expression
+      (sign_operator)
+      (unboxed_constant))))
+
+===========================
+Unboxed numbers in single-argument function applications
+===========================
+
+f #0l;;
+f #0.;;
+f #0.0;;
+f #0e0;;
+f #0.e0;;
+f #0.0e0;;
+f ~x:#0l;;
+
+---
+
+(compilation_unit
+  (expression_item
+    (application_expression
+      (value_path
+        (value_name))
+      (unboxed_constant)))
+  (expression_item
+    (application_expression
+      (value_path
+        (value_name))
+      (unboxed_constant)))
+  (expression_item
+    (application_expression
+      (value_path
+        (value_name))
+      (unboxed_constant)))
+  (expression_item
+    (application_expression
+      (value_path
+        (value_name))
+      (unboxed_constant)))
+  (expression_item
+    (application_expression
+      (value_path
+        (value_name))
+      (unboxed_constant)))
+  (expression_item
+    (application_expression
+      (value_path
+        (value_name))
+      (unboxed_constant)))
+  (expression_item
+    (application_expression
+      (value_path
+        (value_name))
+      (labeled_argument
+        (label_name)
+        (unboxed_constant)))))
+
+===========================
+Unboxed numbers in multi-argument function applications
+===========================
+
+f #0l #0l;;
+f #0l #0l #0l;;
+f x #0l;;
+f [] #0l;;
+f (f #0l) #0l;;
+
+---
+
+(compilation_unit
+  (expression_item
+    (application_expression
+      (value_path
+        (value_name))
+      (unboxed_constant)
+      (unboxed_constant)))
+  (expression_item
+    (application_expression
+      (value_path
+        (value_name))
+      (unboxed_constant)
+      (unboxed_constant)
+      (unboxed_constant)))
+  (expression_item
+    (application_expression
+      (value_path
+        (value_name))
+      (value_path
+        (value_name))
+      (unboxed_constant)))
+  (expression_item
+    (application_expression
+      (value_path
+        (value_name))
+      (list_expression)
+      (unboxed_constant)))
+  (expression_item
+    (application_expression
+      (value_path
+        (value_name))
+      (parenthesized_expression
+        (application_expression
+          (value_path
+            (value_name))
+          (unboxed_constant)))
+      (unboxed_constant))))
+
+===========================
+Unboxed numbers in expressions
+===========================
+
+! #0l;;
+#0l + #0l;;
+(#0l : l#);;
+(#0l, #0l);;
+{ f = #0l; f = #0l };;
+M.(a = #0l);;
+
+---
+
+(compilation_unit
+  (expression_item
+    (prefix_expression
+      (prefix_operator)
+      (unboxed_constant)))
+  (expression_item
+    (infix_expression
+      (unboxed_constant)
+      (add_operator)
+      (unboxed_constant)))
+  (expression_item
+    (typed_expression
+      (unboxed_constant)
+      (unboxed_type_constructor_path
+        (type_constructor))))
+  (expression_item
+    (parenthesized_expression
+      (product_expression
+        (unboxed_constant)
+        (unboxed_constant))))
+  (expression_item
+    (record_expression
+      (field_expression
+        (field_path
+          (field_name))
+        (unboxed_constant))
+      (field_expression
+        (field_path
+          (field_name))
+        (unboxed_constant))))
+  (expression_item
+    (local_open_expression
+      (module_path
+        (module_name))
+      (infix_expression
+        (value_path
+          (value_name))
+        (rel_operator)
+        (unboxed_constant)))))
+
+===========================
+Unboxed numbers in patterns
+===========================
+
+function #0l -> ();;
+function #0l | #0l -> ();;
+function -#0l | -#0l -> ();;
+
+---
+
+(compilation_unit
+  (expression_item
+    (function_expression
+      (match_case
+        (unboxed_constant)
+        (unit))))
+  (expression_item
+    (function_expression
+      (match_case
+        (or_pattern
+          (unboxed_constant)
+          (unboxed_constant))
+        (unit))))
+  (expression_item
+    (function_expression
+      (match_case
+        (or_pattern
+          (signed_unboxed_constant)
+          (signed_unboxed_constant))
+        (unit)))))
+
+===========================
+Unboxed numbers in get expressions
+===========================
+
+x.(#0l);;
+x.[#0l];;
+x.{#0l};;
+
+---
+
+(compilation_unit
+  (expression_item
+    (array_get_expression
+      (value_path
+        (value_name))
+      (unboxed_constant)))
+  (expression_item
+    (string_get_expression
+      (value_path
+        (value_name))
+      (unboxed_constant)))
+  (expression_item
+    (bigarray_get_expression
+      (value_path
+        (value_name))
+      (unboxed_constant))))
+
+===========================
+Unboxed numbers in method invocations
+===========================
+
+c#m #0l #0l;;
+
+---
+
+(compilation_unit
+  (expression_item
+    (application_expression
+      (method_invocation
+        (value_path
+          (value_name))
+        (method_name))
+      (unboxed_constant)
+      (unboxed_constant))))
+
+===========================
+Unboxed numbers with hash operators
+===========================
+
+#0l ## #0l;;
+#0l #! #0l;;
+
+---
+
+(compilation_unit
+  (expression_item
+    (hash_expression
+      (unboxed_constant)
+      (hash_operator)
+      (unboxed_constant)))
+  (expression_item
+    (hash_expression
+      (unboxed_constant)
+      (hash_operator)
+      (unboxed_constant))))

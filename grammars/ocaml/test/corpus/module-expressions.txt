@@ -19,6 +19,81 @@ module M = M.M
         (module_path (module_name))
         (module_name)))))
 
+==========================
+Module arguments
+==========================
+
+module M (A : T) (A : T) : T = M
+module M (A : T with type t := t and type t := t) : T = M
+module M (A : functor () -> M) : T = M
+module M (A : () -> T) : T = M
+
+---
+
+(compilation_unit
+  (module_definition
+    (module_binding
+      (module_name)
+      (module_parameter
+        (module_name)
+        (module_type_path
+          (module_type_name)))
+      (module_parameter
+        (module_name)
+        (module_type_path
+          (module_type_name)))
+      (module_type_path
+        (module_type_name))
+      (module_path
+        (module_name))))
+  (module_definition
+    (module_binding
+      (module_name)
+      (module_parameter
+        (module_name)
+        (module_type_constraint
+          (module_type_path
+            (module_type_name))
+          (constrain_type
+            (type_constructor_path
+              (type_constructor))
+            (type_constructor_path
+              (type_constructor)))
+          (constrain_type
+            (type_constructor_path
+              (type_constructor))
+            (type_constructor_path
+              (type_constructor)))))
+      (module_type_path
+        (module_type_name))
+      (module_path
+        (module_name))))
+  (module_definition
+    (module_binding
+      (module_name)
+      (module_parameter
+        (module_name)
+        (functor_type
+          (module_parameter)
+          (module_type_path
+            (module_type_name))))
+      (module_type_path
+        (module_type_name))
+      (module_path
+        (module_name))))
+  (module_definition
+    (module_binding
+      (module_name)
+      (module_parameter
+        (module_name)
+        (functor_type
+          (module_type_path
+            (module_type_name))))
+      (module_type_path
+        (module_type_name))
+      (module_path
+        (module_name)))))
+
 ============================
 Structures
 ============================

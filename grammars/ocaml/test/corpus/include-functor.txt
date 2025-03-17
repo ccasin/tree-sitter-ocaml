@@ -1,0 +1,306 @@
+==============================
+Include functor
+==============================
+
+include functor M
+include functor[@attr] M
+include functor M[@@attr]
+include functor M[@@attr1] [@@attr2]
+include functor A.B
+include functor A (B)
+include functor A(B)
+include functor[@attr] A (B)
+include functor A (B) [@@attr]
+include functor M.A (M.B)
+include functor A (B) (C)
+include functor A (struct end)
+include functor A (struct include functor B end)
+include functor functor (_ : sig end) -> struct end
+include functor[@attr] functor (_ : sig end) -> struct end
+include functor functor (_ : sig end) -> struct end [@@attr]
+include functor (functor (_ : sig end) (_ : sig end) -> struct end) (M)
+include functor (functor (_ : sig end) (_ : sig end) -> struct end) (M) [@@attr]
+
+module type T = sig
+  include functor M
+  include functor[@attr] M
+  include functor M [@@attr]
+  include functor A.B
+  include functor (sig end) -> sig end
+  include functor[@attr] (sig end) -> sig end
+  include functor (sig end) -> sig end [@@attr]
+  include (functor (_ : sig end) -> sig end)
+  include functor ((sig end) -> sig end)
+  include functor[@attr] ((sig end) -> sig end)
+  include functor ((sig end) -> sig end) [@@attr]
+  include functor functor (_ : sig end) -> sig end
+  include functor[@attr] functor (_ : sig end) -> sig end
+  include functor functor (_ : sig end) -> sig end [@@attr]
+end
+
+---
+
+(compilation_unit
+  (include_module
+    (module_path
+      (module_name)))
+  (include_module
+    (attribute
+      (attribute_id))
+    (module_path
+      (module_name)))
+  (include_module
+    (module_path
+      (module_name))
+    (item_attribute
+      (attribute_id)))
+  (include_module
+    (module_path
+      (module_name))
+    (item_attribute
+      (attribute_id))
+    (item_attribute
+      (attribute_id)))
+  (include_module
+    (module_path
+      (module_path
+        (module_name))
+      (module_name)))
+  (include_module
+    (module_application
+      (module_path
+        (module_name))
+      (parenthesized_module_expression
+        (module_path
+          (module_name)))))
+  (include_module
+    (module_application
+      (module_path
+        (module_name))
+      (parenthesized_module_expression
+        (module_path
+          (module_name)))))
+  (include_module
+    (attribute
+      (attribute_id))
+    (module_application
+      (module_path
+        (module_name))
+      (parenthesized_module_expression
+        (module_path
+          (module_name)))))
+  (include_module
+    (module_application
+      (module_path
+        (module_name))
+      (parenthesized_module_expression
+        (module_path
+          (module_name))))
+    (item_attribute
+      (attribute_id)))
+  (include_module
+    (module_application
+      (module_path
+        (module_path
+          (module_name))
+        (module_name))
+      (parenthesized_module_expression
+        (module_path
+          (module_path
+            (module_name))
+          (module_name)))))
+  (include_module
+    (module_application
+      (module_application
+        (module_path
+          (module_name))
+        (parenthesized_module_expression
+          (module_path
+            (module_name))))
+      (parenthesized_module_expression
+        (module_path
+          (module_name)))))
+  (include_module
+    (module_application
+      (module_path
+        (module_name))
+      (parenthesized_module_expression
+        (structure))))
+  (include_module
+    (module_application
+      (module_path
+        (module_name))
+      (parenthesized_module_expression
+        (structure
+          (include_module
+            (module_path
+              (module_name)))))))
+  (include_module
+    (functor
+      (module_parameter
+        (module_name)
+        (signature))
+      (structure)))
+  (include_module
+    (attribute
+      (attribute_id))
+    (functor
+      (module_parameter
+        (module_name)
+        (signature))
+      (structure)))
+  (include_module
+    (functor
+      (module_parameter
+        (module_name)
+        (signature))
+      (structure))
+    (item_attribute
+      (attribute_id)))
+  (include_module
+    (module_application
+      (parenthesized_module_expression
+        (functor
+          (module_parameter
+            (module_name)
+            (signature))
+          (module_parameter
+            (module_name)
+            (signature))
+          (structure)))
+      (parenthesized_module_expression
+        (module_path
+          (module_name)))))
+  (include_module
+    (module_application
+      (parenthesized_module_expression
+        (functor
+          (module_parameter
+            (module_name)
+            (signature))
+          (module_parameter
+            (module_name)
+            (signature))
+          (structure)))
+      (parenthesized_module_expression
+        (module_path
+          (module_name))))
+    (item_attribute
+      (attribute_id)))
+  (module_type_definition
+    (module_type_name)
+    (signature
+      (include_module_type
+        (module_type_path
+          (module_type_name)))
+      (include_module_type
+        (attribute
+          (attribute_id))
+        (module_type_path
+          (module_type_name)))
+      (include_module_type
+        (module_type_path
+          (module_type_name))
+        (item_attribute
+          (attribute_id)))
+      (include_module_type
+        (module_type_path
+          (extended_module_path
+            (module_name))
+          (module_type_name)))
+      (include_module_type
+        (functor_type
+          (parenthesized_module_type
+            (signature))
+          (signature)))
+      (include_module_type
+        (attribute
+          (attribute_id))
+        (functor_type
+          (parenthesized_module_type
+            (signature))
+          (signature)))
+      (include_module_type
+        (functor_type
+          (parenthesized_module_type
+            (signature))
+          (signature))
+        (item_attribute
+          (attribute_id)))
+      (include_module_type
+        (parenthesized_module_type
+          (functor_type
+            (module_parameter
+              (module_name)
+              (signature))
+            (signature))))
+      (include_module_type
+        (parenthesized_module_type
+          (functor_type
+            (parenthesized_module_type
+              (signature))
+            (signature))))
+      (include_module_type
+        (attribute
+          (attribute_id))
+        (parenthesized_module_type
+          (functor_type
+            (parenthesized_module_type
+              (signature))
+            (signature))))
+      (include_module_type
+        (parenthesized_module_type
+          (functor_type
+            (parenthesized_module_type
+              (signature))
+            (signature)))
+        (item_attribute
+          (attribute_id)))
+      (include_module_type
+        (functor_type
+          (module_parameter
+            (module_name)
+            (signature))
+          (signature)))
+      (include_module_type
+        (attribute
+          (attribute_id))
+        (functor_type
+          (module_parameter
+            (module_name)
+            (signature))
+          (signature)))
+      (include_module_type
+        (functor_type
+          (module_parameter
+            (module_name)
+            (signature))
+          (signature))
+        (item_attribute
+          (attribute_id))))))
+
+==============================
+Regular include
+==============================
+
+include (functor () -> struct end)
+include (functor (_ : sig end) -> struct end) (struct end)
+
+---
+
+(compilation_unit
+  (include_module
+    (parenthesized_module_expression
+      (functor
+        (module_parameter)
+        (structure))))
+  (include_module
+    (module_application
+      (parenthesized_module_expression
+        (functor
+          (module_parameter
+            (module_name)
+            (signature))
+          (structure)))
+      (parenthesized_module_expression
+        (structure)))))

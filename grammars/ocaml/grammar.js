@@ -30,6 +30,34 @@ const NUMBER = token(choice(
   /0[oO][0-7][0-7_]*[g-zG-Z]?/,
   /0[bB][01][01_]*[g-zG-Z]?/
 ))
+// TODO: Make it so that hash numbers must either
+//    1) end with a width suffix, as in [#0l],
+//    2) contain a dot, as in [#0.] and [#0.0], or
+//    3) contain an exponent, as in [#0e0].
+// Those are the rules that define the syntax for unboxed numbers in Flambda.
+// Examples of what should be valid:
+//    #0l
+//    #0.
+//    #0e0
+//    #0.l
+//    #0.0
+//    #0x0l
+//    #0x0.
+//    #0o0l
+//    #0b0l
+// Examples of what should be invalid:
+//    #0
+//    #0x0
+//    #0o0
+//    #0b0
+// My attempts so far of enforcing these rules have caused problems. I think
+// Tree-sitter gets confused in some situations about [toplevel_directive] vs.
+// [unboxed_constant].
+//
+// I think it's okay to leave things as they are for now because Tree-sitter
+// successfully parses all unboxed numbers that Flambda can parse -- it just
+// parses _more_ than what Flambda can parse.
+const HASH_NUMBER = token(seq('#', NUMBER))
 
 module.exports = grammar({
   name: 'ocaml',
@@ -46,7 +74,7 @@ module.exports = grammar({
     $._argument,
     $._extension,
     $._item_extension,
-    $._value_pattern,
+    $._value_name,
     $._label_name,
     $._field_name,
     $._class_name,
@@ -73,7 +101,6 @@ module.exports = grammar({
     $._simple_class_expression,
     $._class_expression,
     $._class_field,
-    $._polymorphic_type,
     $._simple_type,
     $._tuple_type,
     $._type,
@@ -81,10 +108,10 @@ module.exports = grammar({
     $._expression,
     $._sequence_expression,
     $._simple_pattern,
+    $._pattern_no_exception,
     $._pattern,
-    $._binding_pattern,
-    $._constant,
-    $._signed_constant,
+    $._value_constant,
+    $._signed_value_constant,
     $._infix_operator
   ],
 
@@ -124,7 +151,7 @@ module.exports = grammar({
     toplevel_directive: $ => seq(
       $.directive,
       optional(choice(
-        $._constant,
+        $._value_constant, // Cannot be unboxed
         $.value_path,
         $.module_path
       ))
@@ -134,6 +161,9 @@ module.exports = grammar({
 
     _structure_item: $ => choice(
       $.value_definition,
+      // Value specifications in structures do parse, even though the compiler
+      // complains about them
+      $.value_specification,
       $.external,
       $.type_definition,
       $.exception_definition,
@@ -153,47 +183,113 @@ module.exports = grammar({
     ),
 
     let_binding: $ => prec.right(seq(
-      field('pattern', $._binding_pattern),
-      optional(seq(
-        repeat($._parameter),
-        optional($._polymorphic_typed),
-        optional(seq(':>', $._type)),
-        '=',
-        field('body', $._sequence_expression),
+      choice(
+        // A pattern. Examples:
+        //    let x
+        //    let (x @ local)
+        //    let (x, y)
+        // We cannot allow exception patterns here because that would create a
+        // conflict: when encountering [let exception], the parser wouldn't be
+        // able to determine whether the code is a [$.let_exception_expression]
+        // or an [$.exception_pattern] inside a [$.let_binding].
+        field('pattern', $._pattern_no_exception),
+        // Legacy modes followed by an identifier or a parenthesized operator.
+        // Examples:
+        //    let local_ x
+        //    let local_ ( + )
+        seq(
+          $._mode_expr_legacy,
+          field('pattern', $._value_name)
+        ),
+      ),
+      optional(choice(
+        $.at_mode_expr,
+        seq(
+          repeat($._parameter),
+          optional(choice(
+            $._maybe_polymorphic_typed_with_optional_modes,
+            $.at_mode_expr
+          )),
+          optional($._coerced),
+          '=',
+          field('body', $._sequence_expression)
+        )
       )),
       repeat($.item_attribute)
     )),
 
     _parameter: $ => choice(
       $.parameter,
-      alias($._parenthesized_abstract_type, $.abstract_type)
+      alias(
+        $._parenthesized_abstract_types_with_optional_jkind_annotations,
+        $.abstract_types
+      )
     ),
 
     parameter: $ => choice(
-      field('pattern', $._simple_pattern),
+      // A positional parameter. Examples:
+      //    x
+      //    (x : t)
+      //    (x : 'a. 'a)
+      field('pattern', $._simple_maybe_polymorphic_pattern_with_optional_modes),
+      // A labeled or optional parameter with no additional information.
+      // Examples:
+      //    ~x
+      //    ?x
       seq(
         choice('~', '?'),
         field('pattern', $._simple_value_pattern)
       ),
-      seq(
-        $._label,
-        token.immediate(':'),
-        field('pattern', $._simple_pattern)
-      ),
+      // A labeled or optional parameter inside parentheses, optionally with a
+      // default value. Examples:
+      //    ~(x : t)
+      //    ?(x : 'a. 'a)
+      //    ?(x : t = y)
+      // TODO: Currently, this rule allows default values on labeled
+      // parameters, e.g. [~(x = y)], but Flambda doesn't allow this syntax. We
+      // should fix this inconsistency.
       seq(
         choice('~', '?'),
         '(',
+        optional($._mode_expr_legacy),
         field('pattern', $._simple_value_pattern),
-        optional($._typed),
+        optional(choice(
+          $._maybe_polymorphic_typed_with_optional_modes,
+          $.at_mode_expr
+        )),
         optional(seq('=', $._sequence_expression)),
         ')'
       ),
+      // A labeled or optional parameter with an alias. Examples:
+      //    ~x:y
+      //    ~x:(y : t)
+      //    ?x:(y : 'a. 'a)
+      seq(
+        $._label,
+        token.immediate(':'),
+        field(
+          'pattern',
+          $._simple_maybe_polymorphic_pattern_with_optional_modes
+        )
+      ),
+      // A labeled or optional parameter with an alias and a default value.
+      // Examples:
+      //    ?x:(y = z)
+      //    ?x:(y : t = z)
+      //    ?x:(y : 'a. 'a = z)
+      // TODO: Currently, this rule allows default values on labeled
+      // parameters, e.g. [~x:(y = z)] but Flambda doesn't allow this syntax. We
+      // should fix this inconsistency.
       seq(
         $._label,
         token.immediate(':'),
         '(',
+        optional($._mode_expr_legacy),
         field('pattern', $._pattern),
-        optional($._typed),
+        optional(choice(
+          $._maybe_polymorphic_typed_with_optional_modes,
+          $.at_mode_expr
+        )),
         seq('=', $._sequence_expression),
         ')'
       )
@@ -203,9 +299,12 @@ module.exports = grammar({
       'external',
       optional($._attribute),
       $._value_name,
-      $._polymorphic_typed,
+      $._maybe_polymorphic_typed,
       '=',
-      repeat1($.string),
+      repeat1(choice(
+        $.string,
+        $.quoted_string
+      )),
       repeat($.item_attribute)
     ),
 
@@ -216,16 +315,21 @@ module.exports = grammar({
       sep1('and', $.type_binding)
     ),
 
+    type_substitution: $ => seq(
+      'type',
+      optional($._attribute),
+      sep1('and', $.type_substitution_binding)
+    ),
+
     type_binding: $ => seq(
       optional($._type_params),
       choice(
         seq(
           field('name', $._type_constructor),
-          optional($._type_equation),
+          optional($._jkind_annotation),
           optional(seq(
             '=',
-            optional('private'),
-            field('body', choice($.variant_declaration, $.record_declaration, '..'))
+            $._type_binding_body
           )),
           repeat($.type_constraint)
         ),
@@ -241,23 +345,58 @@ module.exports = grammar({
       repeat($.item_attribute)
     ),
 
+    type_substitution_binding: $ => seq(
+      optional($._type_params),
+      seq(
+        field('name', $._type_constructor),
+        optional($._jkind_annotation),
+        ':=',
+        $._type_binding_body,
+        repeat($.type_constraint)
+      ),
+      repeat($.item_attribute)
+    ),
+
+    _type_binding_body: $ => choice(
+      seq(optional('private'), $._type),
+      seq(
+        optional($.type_synonym),
+        optional('private'),
+        field('body', choice(
+          $.variant_declaration,
+          $.record_declaration,
+          '..'
+        ))
+      )
+    ),
+
+    type_synonym: $ => seq(
+      $._type,
+      '='
+    ),
+
     _type_params: $ => choice(
       $._type_param,
-      parenthesize(sep1(',', $._type_param))
+      parenthesize(sep1(',', seq(
+        $._type_param,
+        optional($._jkind_annotation)
+      )))
     ),
 
     _type_param: $ => seq(
       optional(choice(
         seq('+', optional('!')),
         seq('-', optional('!')),
-        seq('!', optional(choice('+', '-'))),
+        seq('!', optional(choice('+', '-')))
       )),
-      choice($.type_variable, alias('_', $.type_variable))
+      choice($.type_variable, $._type_wildcard)
     ),
 
     _type_equation: $ => seq(
-      choice('=', ':='),
-      optional('private'),
+      choice(
+        seq('=', optional('private')),
+        ':='
+      ),
       $._type
     ),
 
@@ -275,7 +414,10 @@ module.exports = grammar({
         seq('of', $._constructor_argument),
         seq(
           ':',
-          optional(seq(repeat1($.type_variable), '.')),
+          optional(seq(
+            repeat1($._type_variable_with_optional_jkind_annotation),
+            '.'
+          )),
           optional(seq($._constructor_argument, '->')),
           $._simple_type
         ),
@@ -284,7 +426,11 @@ module.exports = grammar({
     ),
 
     _constructor_argument: $ => choice(
-      sep1('*', $._simple_type),
+      sep1('*', seq(
+        optional($.modality_legacy),
+        $._simple_type,
+        optional($.atat_modality_expr)
+      )),
       $.record_declaration
     ),
 
@@ -296,9 +442,13 @@ module.exports = grammar({
     ),
 
     field_declaration: $ => seq(
-      optional('mutable'),
+      optional(choice(
+        'mutable',
+        $.modality_legacy
+      )),
       $._field_name,
-      $._polymorphic_typed,
+      $._maybe_polymorphic_typed,
+      optional($.atat_modality_expr)
     ),
 
     type_constraint: $ => seq(
@@ -350,10 +500,16 @@ module.exports = grammar({
     ),
 
     include_module: $ => seq(
-      'include',
+      $._include_maybe_functor,
       optional($._attribute),
       $._module_expression,
       repeat($.item_attribute)
+    ),
+
+    _include_maybe_functor: $ => choice(
+      'include',
+      // Give precedence to "include functor" over "include"
+      prec(1, seq('include', 'functor'))
     ),
 
     class_definition: $ => seq(
@@ -399,6 +555,7 @@ module.exports = grammar({
       $.value_specification,
       $.external,
       $.type_definition,
+      $.type_substitution,
       $.exception_definition,
       $.module_definition,
       $.module_type_definition,
@@ -414,12 +571,12 @@ module.exports = grammar({
       'val',
       optional($._attribute),
       $._value_name,
-      $._polymorphic_typed,
+      $._maybe_polymorphic_typed_with_optional_modes,
       repeat($.item_attribute)
     ),
 
     include_module_type: $ => seq(
-      'include',
+      $._include_maybe_functor,
       optional($._attribute),
       $._module_type,
       repeat($.item_attribute)
@@ -429,13 +586,17 @@ module.exports = grammar({
 
     _module_typed: $ => seq(':', $._module_type),
 
-    _module_type: $ => choice(
+    _simple_module_type: $ => choice(
       $.module_type_path,
       $.signature,
+      $.parenthesized_module_type
+    ),
+
+    _module_type: $ => choice(
+      $._simple_module_type,
       $.module_type_constraint,
       $.module_type_of,
       $.functor_type,
-      $.parenthesized_module_type,
       $._extension
     ),
 
@@ -451,7 +612,8 @@ module.exports = grammar({
       sep1('and', choice(
         $.constrain_type,
         $.constrain_module,
-        $.constrain_module_type
+        $.constrain_module_type,
+        $.extended_module_path
       ))
     )),
 
@@ -485,7 +647,7 @@ module.exports = grammar({
     functor_type: $ => prec.right(seq(
       choice(
         seq('functor', repeat($.module_parameter)),
-        $._module_type,
+        $._simple_module_type,
         seq('(', ')')
       ),
       '->',
@@ -608,7 +770,7 @@ module.exports = grammar({
       'method',
       repeat(choice('private', 'virtual')),
       $._method_name,
-      $._polymorphic_typed,
+      $._maybe_polymorphic_typed,
       repeat($.item_attribute)
     ),
 
@@ -628,11 +790,31 @@ module.exports = grammar({
     )),
 
     class_function_type: $ => prec.right(PREC.seq, seq(
-      optional(seq(optional('?'), $._label_name, ':')),
-      $._tuple_type,
+      $._class_parameter_type,
       '->',
       $._class_type
     )),
+
+    // This is the same as _parameter_type, but polymorphic types and legacy
+    // modes are not allowed
+    _class_parameter_type: $ => choice(
+      alias($.class_typed_label, $.typed_label),
+      $._tuple_type_without_leading_label
+      // We can't have a tuple_type_with_leading_label here because any leading
+      // label should be parsed as the label for the parameter, not for the
+      // tuple. Example:
+      //    l:t * l:t -> t
+      // should be parsed as
+      //    l:(t * l:t) -> t
+    ),
+
+    // This is the same as typed_label, but legacy modes are not allowed
+    class_typed_label: $ => seq(
+      optional('?'),
+      $._label_name,
+      ':',
+      $._tuple_type_without_leading_label
+    ),
 
     // Class expressions
 
@@ -708,7 +890,7 @@ module.exports = grammar({
       repeat(choice('mutable', 'virtual')),
       field('name', $._instance_variable_name),
       optional($._typed),
-      optional(seq(':>', $._type)),
+      optional($._coerced),
       optional(seq('=', field('body', $._sequence_expression))),
       repeat($.item_attribute)
     ),
@@ -719,7 +901,7 @@ module.exports = grammar({
       repeat(choice('private', 'virtual')),
       field('name', $._method_name),
       repeat($._parameter),
-      optional($._polymorphic_typed),
+      optional($._maybe_polymorphic_typed),
       optional(seq('=', field('body', $._sequence_expression))),
       repeat($.item_attribute)
     ),
@@ -743,36 +925,138 @@ module.exports = grammar({
 
     // Types
 
+    // Does not allow modes
     _typed: $ => seq(':', $._type),
 
+    _typed_with_optional_modes: $ => seq(
+      $._typed,
+      optional($.atat_mode_expr)
+    ),
+
+    // Does not allow modes
     _simple_typed: $ => seq(':', $._simple_type),
 
-    _polymorphic_typed: $ => seq(':', $._polymorphic_type),
+    // Does not allow modes
+    _polymorphic_typed: $ => seq(':', $.polymorphic_type),
 
-    _polymorphic_type: $ => choice(
-      $.polymorphic_type,
-      $._type
+    _polymorphic_typed_with_optional_modes: $ => seq(
+      $._polymorphic_typed,
+      optional($.atat_mode_expr)
+    ),
+
+    // Does not allow modes
+    _maybe_polymorphic_typed: $ => choice(
+      $._typed,
+      $._polymorphic_typed
+    ),
+
+    _maybe_polymorphic_typed_with_optional_modes: $ => choice(
+      $._typed_with_optional_modes,
+      $._polymorphic_typed_with_optional_modes
     ),
 
     polymorphic_type: $ => seq(
       choice(
-        repeat1($.type_variable),
-        alias($._abstract_type, $.abstract_type)
+        // Type variables with optional layout annotations. Example:
+        //    'a ('b : value)
+        repeat1($._type_variable_with_optional_jkind_annotation),
+        // Types introduced with the [type] keyword, with optional layout
+        // annotations. Example:
+        //    type a (b : value)
+        alias(
+          $._abstract_types_with_optional_jkind_annotations,
+          $.abstract_types
+        )
       ),
       '.',
       $._type
     ),
 
-    _abstract_type: $ => seq(
+    _coerced: $ => seq(':>', $._type),
+
+    // One or more abstract types. Does not allow layout annotations. Example:
+    //    type t s
+    _abstract_types: $ => seq(
       'type',
       repeat1($._type_constructor)
     ),
 
-    _parenthesized_abstract_type: $ => parenthesize($._abstract_type),
+    // One or more abstract types. Allows layout annotations but only in
+    // parentheses. Example:
+    //    type t (s : any)
+    _abstract_types_with_optional_jkind_annotations: $ => seq(
+      'type',
+      repeat1(choice(
+        $._type_constructor,
+        parenthesize(seq(
+          $._type_constructor,
+          $._jkind_annotation
+        ))
+      ))
+    ),
+
+    // A single abstract type with a layout annotation. Since there is only one
+    // type, we don't need parentheses, i.e. we allow [type t : any] instead of
+    // [type (t : any)].
+    _abstract_type_with_jkind_annotation: $ => seq(
+      'type',
+      $._type_constructor,
+      $._jkind_annotation
+    ),
+
+    // Does not allow layout annotations
+    _parenthesized_abstract_types: $ => parenthesize($._abstract_types),
+
+    _parenthesized_abstract_types_with_optional_jkind_annotations: $ =>
+      parenthesize(choice(
+        $._abstract_types_with_optional_jkind_annotations,
+        $._abstract_type_with_jkind_annotation
+      )),
+
+    type_variable_with_jkind_annotation: $ => parenthesize(seq(
+      $.type_variable,
+      $._jkind_annotation
+    )),
+
+    type_wildcard_with_jkind_annotation: $ => parenthesize(seq(
+      $._type_wildcard,
+      $._jkind_annotation
+    )),
+
+    _type_variable_with_optional_jkind_annotation: $ => choice(
+      $.type_variable,
+      $.type_variable_with_jkind_annotation
+    ),
+    _type_wildcard_with_optional_jkind_annotation: $ => choice(
+      $._type_wildcard,
+      $.type_wildcard_with_jkind_annotation
+    ),
+
+    _jkind_annotation: $ => seq(':', $.jkind),
+
+    // TODO: Add these choices when they are fully implemented in
+    // the language.
+    //
+    // seq(
+    //   $.jkind,
+    //   'mod',
+    //   $.mode_expr
+    // ),
+    // seq(
+    //   $.jkind,
+    //   'with',
+    //   $._type
+    // ),
+    // seq(
+    //   'kind_of',
+    //   $._type
+    // )
+    jkind: $ => $._identifier,
 
     _simple_type: $ => choice(
       $.type_variable,
       $.type_constructor_path,
+      $.unboxed_type_constructor_path,
       $.constructed_type,
       $.local_open_type,
       $.polymorphic_variant_type,
@@ -780,51 +1064,140 @@ module.exports = grammar({
       $.hash_type,
       $.object_type,
       $.parenthesized_type,
+      $.type_variable_with_jkind_annotation,
+      $.type_wildcard_with_jkind_annotation,
       $._extension
-    ),
-
-    _tuple_type: $ => choice(
-      $._simple_type,
-      $.tuple_type
     ),
 
     _type: $ => choice(
       $._tuple_type,
       $.function_type,
-      $.aliased_type,
+      $.aliased_type
     ),
 
-    function_type: $ => prec.right(PREC.seq, seq(
-      choice($.typed_label, $._type),
+    function_type: $ => seq(
+      $._parameter_type,
+      optional($.at_mode_expr),
       '->',
-      $._type
-    )),
+      choice(
+        $.function_type,
+        seq(
+          optional($._mode_expr_legacy),
+          $._tuple_type,
+          optional($.at_mode_expr)
+        )
+      )
+    ),
 
-    typed_label: $ => prec.left(PREC.seq, seq(
+    _parameter_type: $ => choice(
+      $.typed_label,
+      $.polymorphic_typed_label,
+      seq(
+        optional($._mode_expr_legacy),
+        $._tuple_type_without_leading_label
+      ),
+      // We can't have a tuple_type_with_leading_label here because any leading
+      // label should be parsed as the label for the parameter, not for the
+      // tuple. Example:
+      //    l:t * l:t -> t
+      // should be parsed as
+      //    l:(t * l:t) -> t
+      parenthesize($.polymorphic_type)
+    ),
+
+    typed_label: $ => seq(
       optional('?'),
       $._label_name,
       ':',
-      $._type
+      optional($._mode_expr_legacy),
+      $._tuple_type_without_leading_label
+    ),
+
+    polymorphic_typed_label: $ => seq(
+      optional('?'),
+      $._label_name,
+      ':',
+      optional($._mode_expr_legacy),
+      parenthesize($.polymorphic_type)
+    ),
+
+    _tuple_type: $ => prec(PREC.seq, choice(
+      $._tuple_type_without_leading_label,
+      $.tuple_type_with_leading_label
     )),
 
-    tuple_type: $ => prec(PREC.prod, seq(
-      $._tuple_type,
+    // A tuple type of one or more elements such that the first element is
+    // unlabeled
+    _tuple_type_without_leading_label: $ => choice(
+      $._simple_type,
+      $.proper_tuple_type
+    ),
+
+    // A tuple type of at least two elements such that the first element is
+    // labeled
+    tuple_type_with_leading_label: $ => prec(PREC.seq, seq(
+      $._label_name,
+      ':',
+      $.proper_tuple_type
+    )),
+
+    // A tuple type of at least two elements such that the first element is
+    // unlabeled
+    proper_tuple_type: $ => seq(
+      $._simple_type,
       '*',
+      sep1('*', $._tuple_type_element)
+    ),
+
+    _tuple_type_element: $ => prec(PREC.prod, seq(
+      optional(seq(
+        $._label_name,
+        ':'
+      )),
       $._simple_type
     )),
 
     constructed_type: $ => prec(PREC.app, seq(
+      $._constructed_type_arguments,
       choice(
-        $._simple_type,
-        parenthesize(sep1(',', $._type))
-      ),
-      $.type_constructor_path
+        $.type_constructor_path,
+        $.unboxed_type_constructor_path
+      )
     )),
+
+    _constructed_type_arguments: $ => choice(
+      $._simple_type,
+      parenthesize(sep2(',', choice(
+        // Any type. This includes parenthesized type variables/wildcards with
+        // layout annotations. Examples:
+        //    t
+        //    'a
+        //    _
+        //    ('a : value)
+        //    (_ : value)
+        $._type,
+        // A type variable with a layout annotation. Example:
+        //    'a : value
+        seq(
+          $.type_variable,
+          $._jkind_annotation
+        ),
+        // A type wildcard with a layout annotation. Example:
+        //    _ : value
+        seq(
+          $._type_wildcard,
+          $._jkind_annotation
+        )
+      )))
+    ),
 
     aliased_type: $ => prec(PREC.match, seq(
       $._type,
       'as',
-      $.type_variable
+      choice(
+        $._type_variable_with_optional_jkind_annotation,
+        $._type_wildcard_with_optional_jkind_annotation
+      ),
     )),
 
     local_open_type: $ => seq(
@@ -883,14 +1256,11 @@ module.exports = grammar({
 
     method_type: $ => seq(
       $._method_name,
-      $._polymorphic_typed
+      $._maybe_polymorphic_typed
     ),
 
     hash_type: $ => prec(PREC.hash, seq(
-      optional(choice(
-        $._simple_type,
-        parenthesize(sep1(',', $._type))
-      )),
+      optional($._constructed_type_arguments),
       '#',
       $.class_type_path
     )),
@@ -907,6 +1277,7 @@ module.exports = grammar({
       $.tag,
       $.list_expression,
       $.array_expression,
+      $.iarray_expression,
       $.record_expression,
       $.prefix_expression,
       $.hash_expression,
@@ -946,7 +1317,9 @@ module.exports = grammar({
       $.lazy_expression,
       $.let_module_expression,
       $.let_open_expression,
-      $.let_exception_expression
+      $.let_exception_expression,
+      $.mode_legacy_expression,
+      $.exclave_legacy_expression
     ),
 
     _sequence_expression: $ => choice(
@@ -956,13 +1329,35 @@ module.exports = grammar({
 
     typed_expression: $ => parenthesize(seq(
       $._sequence_expression,
-      $._typed
+      $._typed_with_optional_modes
     )),
 
+    // TODO: Consider flattening expressions like a, b, c.
+
+    // A tuple expression
     product_expression: $ => prec.left(PREC.prod, seq(
-      field('left', $._expression),
+      field('left', $._product_element),
       ',',
-      field('right', $._expression)
+      field('right', $._product_element)
+    )),
+
+    _product_element: $ => prec(PREC.prod, choice(
+      $._expression,
+      seq(
+        '~',
+        $._label_name,
+        optional(seq(
+          token.immediate(':'),
+          $._simple_expression
+        ))
+      ),
+      seq(
+        '~',
+        '(',
+        $._label_name,
+        $._typed,
+        ')'
+      )
     )),
 
     cons_expression: $ => prec.right(PREC.cons, seq(
@@ -973,20 +1368,72 @@ module.exports = grammar({
 
     list_expression: $ => seq(
       '[',
-      optional(seq(
-        sep1(';', $._expression),
-        optional(';')
+      optional(choice(
+        seq(
+          sep1(';', $._expression),
+          optional(';')
+        ),
+        $.comprehension
       )),
       ']'
     ),
 
     array_expression: $ => seq(
       '[|',
-      optional(seq(
-        sep1(';', $._expression),
-        optional(';')
+      optional(choice(
+        seq(
+          sep1(';', $._expression),
+          optional(';')
+        ),
+        $.comprehension
       )),
       '|]'
+    ),
+
+    iarray_expression: $ => seq(
+      '[:',
+      optional(choice(
+        seq(
+          sep1(';', $._expression),
+          optional(';')
+        ),
+        $.comprehension
+      )),
+      ':]'
+    ),
+
+    comprehension: $ => seq(
+      $._expression,
+      repeat1($.comprehension_clause)
+    ),
+
+    comprehension_clause: $ => choice(
+      seq(
+        'for',
+        sep1('and', $.comprehension_iterator)
+      ),
+      seq(
+        'when',
+        $._expression
+      )
+    ),
+
+    comprehension_iterator: $ => choice(
+      seq(
+        $._pattern,
+        '=',
+        $._expression,
+        choice('to', 'downto'),
+        $._expression
+      ),
+      seq(
+        // We allow legacy modes in [x for local_ x in y], but not in
+        // [x for x = 1 to 10]
+        optional($.mode_legacy),
+        $._pattern,
+        'in',
+        $._expression
+      )
     ),
 
     record_expression: $ => seq(
@@ -1000,6 +1447,7 @@ module.exports = grammar({
     field_expression: $ => prec(PREC.seq, seq(
       field('name', $.field_path),
       optional($._typed),
+      optional($._coerced),
       optional(seq('=', field('body', $._expression)))
     )),
 
@@ -1024,7 +1472,7 @@ module.exports = grammar({
         choice('~', '?'),
         '(',
         $._label_name,
-        $._typed,
+        $._typed_with_optional_modes,
         ')'
       ),
     ),
@@ -1113,6 +1561,9 @@ module.exports = grammar({
       ')'
     )),
 
+    // Immutable array indexing is a regular operator, so it is handled by the
+    // [indexing_operator_path] rule and doesn't need its own rule
+
     string_get_expression: $ => prec(PREC.dot, seq(
       $._simple_expression,
       '.',
@@ -1177,7 +1628,7 @@ module.exports = grammar({
     for_expression: $ => seq(
       'for',
       optional($._attribute),
-      field('name', $._value_pattern),
+      field('name', $._pattern),
       '=',
       field('from', $._sequence_expression),
       choice('to', 'downto'),
@@ -1255,8 +1706,7 @@ module.exports = grammar({
     coercion_expression: $ => parenthesize(seq(
       $._sequence_expression,
       optional($._typed),
-      ':>',
-      $._type
+      $._coerced
     )),
 
     assert_expression: $ => prec.left(PREC.app, seq(
@@ -1292,6 +1742,7 @@ module.exports = grammar({
         parenthesize(optional($._sequence_expression)),
         $.list_expression,
         $.array_expression,
+        $.iarray_expression,
         $.record_expression,
         $.object_copy_expression,
         $.package_expression
@@ -1311,6 +1762,16 @@ module.exports = grammar({
       'in',
       field('body', $._sequence_expression)
     )),
+
+    mode_legacy_expression: $ => seq(
+      $.mode_legacy,
+      $._sequence_expression
+    ),
+
+    exclave_legacy_expression: $ => seq(
+      $.exclave_legacy,
+      $._sequence_expression
+    ),
 
     new_expression: $ => seq(
       'new',
@@ -1365,7 +1826,7 @@ module.exports = grammar({
     // Patterns
 
     _simple_pattern: $ => choice(
-      $._value_pattern,
+      $._value_name,
       $._signed_constant,
       $.typed_pattern,
       $.constructor_path,
@@ -1374,13 +1835,16 @@ module.exports = grammar({
       $.record_pattern,
       $.list_pattern,
       $.array_pattern,
+      $.iarray_pattern,
       $.local_open_pattern,
       $.package_pattern,
       $.parenthesized_pattern,
+      $.pattern_with_modes,
+      $.pattern_with_modes_legacy,
       $._extension
     ),
 
-    _pattern: $ => choice(
+    _pattern_no_exception: $ => choice(
       $._simple_pattern,
       $.alias_pattern,
       $.or_pattern,
@@ -1389,59 +1853,49 @@ module.exports = grammar({
       $.tuple_pattern,
       $.cons_pattern,
       $.range_pattern,
-      $.lazy_pattern,
-      $.exception_pattern
+      $.lazy_pattern
     ),
 
-    _binding_pattern: $ => choice(
-      $._value_name,
-      $._signed_constant,
-      alias($.typed_binding_pattern, $.typed_pattern),
-      $.constructor_path,
-      $.tag,
-      $.polymorphic_variant_pattern,
-      alias($.record_binding_pattern, $.record_pattern),
-      alias($.list_binding_pattern, $.list_pattern),
-      alias($.array_binding_pattern, $.array_pattern),
-      alias($.local_open_binding_pattern, $.local_open_pattern),
-      $.package_pattern,
-      alias($.parenthesized_binding_pattern, $.parenthesized_pattern),
-      alias($.alias_binding_pattern, $.alias_pattern),
-      alias($.or_binding_pattern, $.or_pattern),
-      alias($.constructor_binding_pattern, $.constructor_pattern),
-      alias($.tag_binding_pattern, $.tag_pattern),
-      alias($.tuple_binding_pattern, $.tuple_pattern),
-      alias($.cons_binding_pattern, $.cons_pattern),
-      $.range_pattern,
-      alias($.lazy_binding_pattern, $.lazy_pattern),
-      $._extension
+    _pattern: $ => choice(
+      $._pattern_no_exception,
+      $.exception_pattern
     ),
 
     alias_pattern: $ => prec.left(PREC.match, seq(
       $._pattern,
       'as',
-      $._value_pattern
-    )),
-
-    alias_binding_pattern: $ => prec.left(PREC.match, seq(
-      $._binding_pattern,
-      'as',
       $._value_name
     )),
 
-    typed_pattern: $ => seq(
-      parenthesize(seq(
-        $._pattern,
-        $._typed
-      ))
+    // Allows modes
+    typed_pattern: $ => parenthesize(seq(
+      optional($._mode_expr_legacy),
+      $._pattern,
+      $._typed_with_optional_modes
+    )),
+
+    // Allows modes
+    polymorphic_typed_pattern: $ => parenthesize(seq(
+      optional($._mode_expr_legacy),
+      $._pattern,
+      $._polymorphic_typed_with_optional_modes
+    )),
+
+    _simple_maybe_polymorphic_pattern_with_optional_modes: $ => choice(
+      $._simple_pattern,
+      $.polymorphic_typed_pattern
     ),
 
-    typed_binding_pattern: $ => seq(
-      parenthesize(seq(
-        field('pattern', $._binding_pattern),
-        $._typed
-      ))
-    ),
+    pattern_with_modes: $ => parenthesize(seq(
+      $._pattern,
+      $.at_mode_expr
+    )),
+
+    pattern_with_modes_legacy: $ => parenthesize(seq(
+      $._mode_expr_legacy,
+      $._pattern,
+      optional($.at_mode_expr)
+    )),
 
     or_pattern: $ => prec.left(PREC.seq, seq(
       $._pattern,
@@ -1449,21 +1903,10 @@ module.exports = grammar({
       $._pattern
     )),
 
-    or_binding_pattern: $ => prec.left(PREC.seq, seq(
-      $._binding_pattern,
-      '|',
-      $._binding_pattern
-    )),
-
     constructor_pattern: $ => prec.right(PREC.app, seq(
       $.constructor_path,
-      optional(alias($._parenthesized_abstract_type, $.abstract_type)),
+      optional(alias($._parenthesized_abstract_types, $.abstract_types)),
       $._pattern
-    )),
-
-    constructor_binding_pattern: $ => prec.right(PREC.app, seq(
-      $.constructor_path,
-      field('pattern', $._binding_pattern)
     )),
 
     tag_pattern: $ => prec.right(PREC.app, seq(
@@ -1471,26 +1914,38 @@ module.exports = grammar({
       $._pattern
     )),
 
-    tag_binding_pattern: $ => prec.right(PREC.app, seq(
-      $.tag,
-      field('pattern', $._binding_pattern)
-    )),
-
     polymorphic_variant_pattern: $ => seq(
       '#',
       $.type_constructor_path
     ),
 
+    // TODO: Consider flattening patterns like a, b, c.
     tuple_pattern: $ => prec.left(PREC.prod, seq(
-      $._pattern,
+      $._tuple_pattern_element,
       ',',
-      $._pattern
+      choice(
+        $._tuple_pattern_element,
+        '..'
+      )
     )),
 
-    tuple_binding_pattern: $ => prec.left(PREC.prod, seq(
-      $._binding_pattern,
-      ',',
-      $._binding_pattern
+    _tuple_pattern_element: $ => prec(PREC.prod, choice(
+      $._pattern,
+      seq(
+        '~',
+        $._label_name,
+        optional(seq(
+          token.immediate(':'),
+          $._simple_pattern
+        ))
+      ),
+      seq(
+        '~',
+        '(',
+        $._label_name,
+        $._typed,
+        ')'
+      )
     )),
 
     record_pattern: $ => prec.left(seq(
@@ -1507,33 +1962,10 @@ module.exports = grammar({
       optional(seq('=', $._pattern))
     ),
 
-    record_binding_pattern: $ => prec.left(seq(
-      '{',
-      sep1(';', alias($.field_binding_pattern, $.field_pattern)),
-      optional(seq(';', '_')),
-      optional(';'),
-      '}'
-    )),
-
-    field_binding_pattern: $ => seq(
-      $.field_path,
-      optional($._typed),
-      optional(seq('=', field('pattern', $._binding_pattern)))
-    ),
-
     list_pattern: $ => prec.left(seq(
       '[',
       optional(seq(
         sep1(';', $._pattern),
-        optional(';')
-      )),
-      ']'
-    )),
-
-    list_binding_pattern: $ => prec.left(seq(
-      '[',
-      optional(seq(
-        sep1(';', $._binding_pattern),
         optional(';')
       )),
       ']'
@@ -1545,12 +1977,6 @@ module.exports = grammar({
       $._pattern
     )),
 
-    cons_binding_pattern: $ => prec.right(PREC.cons, seq(
-      $._binding_pattern,
-      '::',
-      $._binding_pattern
-    )),
-
     array_pattern: $ => prec.left(seq(
       '[|',
       optional(seq(
@@ -1560,13 +1986,13 @@ module.exports = grammar({
       '|]'
     )),
 
-    array_binding_pattern: $ => prec.left(seq(
-      '[|',
+    iarray_pattern: $ => prec.left(seq(
+      '[:',
       optional(seq(
-        sep1(';', $._binding_pattern),
+        sep1(';', $._pattern),
         optional(';')
       )),
-      '|]'
+      ':]'
     )),
 
     range_pattern: $ => prec(PREC.dot, seq(
@@ -1581,12 +2007,6 @@ module.exports = grammar({
       $._pattern
     )),
 
-    lazy_binding_pattern: $ => prec(PREC.hash, seq(
-      'lazy',
-      optional($._attribute),
-      $._binding_pattern
-    )),
-
     local_open_pattern: $ => seq(
       $.module_path,
       '.',
@@ -1594,18 +2014,8 @@ module.exports = grammar({
         parenthesize(optional($._pattern)),
         $.list_pattern,
         $.array_pattern,
+        $.iarray_pattern,
         $.record_pattern
-      )
-    ),
-
-    local_open_binding_pattern: $ => seq(
-      $.module_path,
-      '.',
-      choice(
-        parenthesize(optional($._binding_pattern)),
-        $.list_binding_pattern,
-        $.array_binding_pattern,
-        $.record_binding_pattern
       )
     ),
 
@@ -1617,8 +2027,6 @@ module.exports = grammar({
     )),
 
     parenthesized_pattern: $ => parenthesize($._pattern),
-
-    parenthesized_binding_pattern: $ => parenthesize($._binding_pattern),
 
     exception_pattern: $ => seq(
       'exception',
@@ -1705,7 +2113,7 @@ module.exports = grammar({
 
     // Constants
 
-    _constant: $ => choice(
+    _value_constant: $ => choice(
       $.number,
       $.character,
       $.string,
@@ -1714,9 +2122,29 @@ module.exports = grammar({
       $.unit
     ),
 
-    _signed_constant: $ => choice(
-      $._constant,
+    unboxed_constant: $ => HASH_NUMBER,
+
+    _constant: $ => choice(
+      $._value_constant,
+      $.unboxed_constant
+    ),
+
+    _signed_value_constant: $ => choice(
+      $._value_constant,
       $.signed_number
+    ),
+
+    signed_unboxed_constant: $ => seq(
+      /[+-]/,
+      HASH_NUMBER
+    ),
+
+    _signed_constant: $ => choice(
+      $._signed_value_constant,
+      choice(
+        $.unboxed_constant,
+        $.signed_unboxed_constant
+      )
     ),
 
     number: $ => NUMBER,
@@ -1787,7 +2215,7 @@ module.exports = grammar({
 
     unit: $ => choice(
       seq('(', ')'),
-      seq('begin', 'end')
+      seq('begin', optional($._attribute), 'end')
     ),
 
     // Operators
@@ -1899,6 +2327,47 @@ module.exports = grammar({
       $.match_operator
     )),
 
+    // Modes
+
+    at_mode_expr: $ => seq(
+      '@',
+      $._mode_expr
+    ),
+
+    atat_mode_expr: $ => seq(
+      '@@',
+      $._mode_expr
+    ),
+
+    atat_modality_expr: $ => seq(
+      '@@',
+      $.modality_expr
+    ),
+
+    _mode_expr: $ => repeat1($._mode),
+
+    modality_expr: $ => repeat1($._modality),
+
+    _mode: $ => alias($._identifier, $.mode),
+
+    _modality: $ => alias($._identifier, $.modality),
+
+    // Legacy modes
+
+    _mode_expr_legacy: $ => repeat1($.mode_legacy),
+
+    mode_legacy: $ => choice(
+      'local_',
+      'unique_',
+      'once_'
+    ),
+
+    modality_legacy: $ => 'global_',
+
+    exclave_legacy: $ => 'exclave_',
+
+    // Paths
+
     value_path: $ => path($.module_path, $._value_name),
 
     module_path: $ => prec(1, path($.module_path, $._module_name)),
@@ -1917,7 +2386,20 @@ module.exports = grammar({
 
     constructor_path: $ => path($.module_path, $._constructor_name),
 
-    type_constructor_path: $ => path($.extended_module_path, $._type_constructor),
+    type_constructor_path: $ => choice(
+      path($.extended_module_path, $._type_constructor),
+      // For some reason, we have to explicitly add the below option, even
+      // though it can be matched by the above option. If we don't include this
+      // option, Tree-sitter won't be able to parse [type t = (_, t) t].
+      //
+      // TODO: Continue searching for a better solution.
+      '_'
+    ),
+
+    unboxed_type_constructor_path: $ => prec(PREC.hash, seq(
+      path($.extended_module_path, $._type_constructor),
+      token.immediate('#')
+    )),
 
     class_path: $ => path($.module_path, $._class_name),
 
@@ -1944,6 +2426,7 @@ module.exports = grammar({
     _label: $ => seq(choice('~', '?'), $._label_name),
     directive: $ => seq(/#/, choice($._identifier, $._capitalized_identifier)),
     type_variable: $ => seq(/'/, choice($._identifier, $._capitalized_identifier)),
+    _type_wildcard: $ => alias('_', $.type_variable),
     tag: $ => seq(/`/, choice($._identifier, $._capitalized_identifier)),
     attribute_id: $ => sep1(/\./, choice($._identifier, $._capitalized_identifier))
   },
@@ -1964,6 +2447,10 @@ function sep(delimiter, rule) {
 
 function sep1(delimiter, rule) {
   return seq(rule, repeat(seq(delimiter, rule)))
+}
+
+function sep2(delimiter, rule) {
+  return seq(rule, delimiter, sep1(delimiter, rule))
 }
 
 function repeat2(rule) {

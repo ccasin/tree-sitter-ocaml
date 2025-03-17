@@ -1,0 +1,346 @@
+==============================
+Layouts on types
+==============================
+
+type 'a t : l = t
+type t = ('a : l)
+type t = (_ : l)
+type t = ('a : _)
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_variable)
+      (type_constructor)
+      (jkind)
+      (type_constructor_path
+        (type_constructor))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (type_variable_with_jkind_annotation
+        (type_variable)
+        (jkind))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (type_wildcard_with_jkind_annotation
+        (type_variable)
+        (jkind))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (type_variable_with_jkind_annotation
+        (type_variable)
+        (jkind)))))
+
+==============================
+Layouts on type parameters
+==============================
+
+type ('a : l) t
+type ('a : l, _ : l) t
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_variable)
+      (jkind)
+      (type_constructor)))
+  (type_definition
+    (type_binding
+      (type_variable)
+      (jkind)
+      (type_variable)
+      (jkind)
+      (type_constructor))))
+
+==============================
+Layouts in constructed types
+==============================
+
+type t = ('a : l) t
+type t = (_ : l) t
+type t = (t, 'a : l, _ : l) t
+type t = (('a : l), (_ : l)) t
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (constructed_type
+        (type_variable_with_jkind_annotation
+          (type_variable)
+          (jkind))
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (constructed_type
+        (type_wildcard_with_jkind_annotation
+          (type_variable)
+          (jkind))
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (constructed_type
+        (type_constructor_path
+          (type_constructor))
+        (type_variable)
+        (jkind)
+        (type_variable)
+        (jkind)
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (constructed_type
+        (type_variable_with_jkind_annotation
+          (type_variable)
+          (jkind))
+        (type_wildcard_with_jkind_annotation
+          (type_variable)
+          (jkind))
+        (type_constructor_path
+          (type_constructor))))))
+
+==============================
+Layouts in hash types
+==============================
+
+type t = ('a : l) #c
+type t = (_ : l) #c
+type t = (t, 'a : l, _ : l) #c
+type t = (('a : l), (_ : l)) #c
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (hash_type
+        (type_variable_with_jkind_annotation
+          (type_variable)
+          (jkind))
+        (class_type_path
+          (class_type_name)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (hash_type
+        (type_wildcard_with_jkind_annotation
+          (type_variable)
+          (jkind))
+        (class_type_path
+          (class_type_name)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (hash_type
+        (type_constructor_path
+          (type_constructor))
+        (type_variable)
+        (jkind)
+        (type_variable)
+        (jkind)
+        (class_type_path
+          (class_type_name)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (hash_type
+        (type_variable_with_jkind_annotation
+          (type_variable)
+          (jkind))
+        (type_wildcard_with_jkind_annotation
+          (type_variable)
+          (jkind))
+        (class_type_path
+          (class_type_name))))))
+
+==============================
+Layouts in aliased types
+==============================
+
+type t = t as ('a : l)
+type t = t as (_ : l)
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (aliased_type
+        (type_constructor_path
+          (type_constructor))
+        (type_variable_with_jkind_annotation
+          (type_variable)
+          (jkind)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (aliased_type
+        (type_constructor_path
+          (type_constructor))
+        (type_wildcard_with_jkind_annotation
+          (type_variable)
+          (jkind))))))
+
+==============================
+Layouts in polymorphic types
+==============================
+
+type t = (('a : l) ('a : l). 'a) -> t
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (polymorphic_type
+          (type_variable_with_jkind_annotation
+            (type_variable)
+            (jkind))
+          (type_variable_with_jkind_annotation
+            (type_variable)
+            (jkind))
+          (type_variable))
+        (type_constructor_path
+          (type_constructor))))))
+
+==============================
+Layouts in abstract types
+==============================
+
+let x (type (a : l) (a : l)) = x
+let x (type a : l) = x
+let x (type (a : l)) = x
+let x : type (a : l). a = x
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (value_name)
+      (abstract_types
+        (type_constructor)
+        (jkind)
+        (type_constructor)
+        (jkind))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (abstract_types
+        (type_constructor)
+        (jkind))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (abstract_types
+        (type_constructor)
+        (jkind))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (polymorphic_type
+        (abstract_types
+          (type_constructor)
+          (jkind))
+        (type_constructor_path
+          (type_constructor)))
+      (value_path
+        (value_name)))))
+
+==============================
+Layouts in polymorphic types in constructors
+==============================
+
+type t =
+  | A : ('a : l) ('a : l). t
+  | A : 'a ('a : l) 'a. t
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (variant_declaration
+        (constructor_declaration
+          (constructor_name)
+          (type_variable_with_jkind_annotation
+            (type_variable)
+            (jkind))
+          (type_variable_with_jkind_annotation
+            (type_variable)
+            (jkind))
+          (type_constructor_path
+            (type_constructor)))
+        (constructor_declaration
+          (constructor_name)
+          (type_variable)
+          (type_variable_with_jkind_annotation
+            (type_variable)
+            (jkind))
+          (type_variable)
+          (type_constructor_path
+            (type_constructor)))))))
+
+==============================
+Layouts with modes
+==============================
+
+type t = ('a : l) @ m -> t
+let f (local_ x : ('a : l). 'a @@ m) = x
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (type_variable_with_jkind_annotation
+          (type_variable)
+          (jkind))
+        (at_mode_expr
+          (mode))
+        (type_constructor_path
+          (type_constructor)))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (polymorphic_typed_pattern
+          (mode_legacy)
+          (value_name)
+          (polymorphic_type
+            (type_variable_with_jkind_annotation
+              (type_variable)
+              (jkind))
+            (type_variable))
+          (atat_mode_expr
+            (mode))))
+      (value_path
+        (value_name)))))

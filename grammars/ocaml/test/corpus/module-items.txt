@@ -3,7 +3,11 @@ External
 ==============================
 
 external x : int = "x"
+external x : int = "x" "x"
 external x : 'a . 'a = "x"
+external%ext x : int = "x"
+external x : int = {| x |}
+external x : int = {| x |} {| x |}
 
 ---
 
@@ -14,8 +18,27 @@ external x : 'a . 'a = "x"
     (string (string_content)))
   (external
     (value_name)
+    (type_constructor_path (type_constructor))
+    (string (string_content))
+    (string (string_content)))
+  (external
+    (value_name)
     (polymorphic_type (type_variable) (type_variable))
-    (string (string_content))))
+    (string (string_content)))
+  (external
+    (attribute_id)
+    (value_name)
+    (type_constructor_path (type_constructor))
+    (string (string_content)))
+  (external
+    (value_name)
+    (type_constructor_path (type_constructor))
+    (quoted_string (quoted_string_content)))
+  (external
+    (value_name)
+    (type_constructor_path (type_constructor))
+    (quoted_string (quoted_string_content))
+    (quoted_string (quoted_string_content))))
 
 ==============================
 Type definition
@@ -33,6 +56,8 @@ type t = {
 }
 type t = t constraint 'a = t
 type t = |
+type t = ..
+type t = private ..
 
 ---
 
@@ -93,7 +118,92 @@ type t = |
   (type_definition
     (type_binding
       (type_constructor)
-      (variant_declaration))))
+      (variant_declaration)))
+  (type_definition
+    (type_binding
+      (type_constructor)))
+  (type_definition
+    (type_binding
+      (type_constructor))))
+
+==============================
+Type synonyms in type definitions
+==============================
+
+type t = t = A | B
+type t = t = private A | B
+type t = t = { x : t; x : t }
+type t = t = private { x : t; x : t }
+type t = t = ..
+type t = t = private ..
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (type_synonym
+        (type_constructor_path
+          (type_constructor)))
+      (variant_declaration
+        (constructor_declaration
+          (constructor_name))
+        (constructor_declaration
+          (constructor_name)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (type_synonym
+        (type_constructor_path
+          (type_constructor)))
+      (variant_declaration
+        (constructor_declaration
+          (constructor_name))
+        (constructor_declaration
+          (constructor_name)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (type_synonym
+        (type_constructor_path
+          (type_constructor)))
+      (record_declaration
+        (field_declaration
+          (field_name)
+          (type_constructor_path
+            (type_constructor)))
+        (field_declaration
+          (field_name)
+          (type_constructor_path
+            (type_constructor))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (type_synonym
+        (type_constructor_path
+          (type_constructor)))
+      (record_declaration
+        (field_declaration
+          (field_name)
+          (type_constructor_path
+            (type_constructor)))
+        (field_declaration
+          (field_name)
+          (type_constructor_path
+            (type_constructor))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (type_synonym
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (type_synonym
+        (type_constructor_path
+          (type_constructor))))))
 
 ==============================
 Exception definition
@@ -188,6 +298,7 @@ Module type definition
 
 module type T = T
 module type T := T
+module type T = T with type t := t -> t
 
 ---
 
@@ -197,7 +308,46 @@ module type T := T
     (module_type_path (module_type_name)))
   (module_type_definition
     (module_type_name)
-    (module_type_path (module_type_name))))
+    (module_type_path (module_type_name)))
+  (module_type_definition
+    (module_type_name)
+    (module_type_constraint
+      (module_type_path (module_type_name))
+      (constrain_type
+        (type_constructor_path
+          (type_constructor))
+        (function_type
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor)))))))
+
+==============================
+Module type definitions with functors
+==============================
+
+module type T = T -> T
+module type T = T -> T with type t := t
+
+---
+
+(compilation_unit
+  (module_type_definition
+    (module_type_name)
+    (functor_type
+      (module_type_path (module_type_name))
+      (module_type_path (module_type_name))))
+  (module_type_definition
+    (module_type_name)
+    (functor_type
+      (module_type_path (module_type_name))
+      (module_type_constraint
+        (module_type_path (module_type_name))
+        (constrain_type
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor)))))))
 
 ==============================
 Open
@@ -213,3 +363,59 @@ open ! M
   (open_module (module_path (module_name)))
   (open_module (module_path (module_name)))
   (open_module (module_path (module_name))))
+
+==============================
+Value specifications in structures
+==============================
+
+module M = struct
+  val x : t
+  let x = x
+end
+
+---
+
+(compilation_unit
+  (module_definition
+    (module_binding
+      (module_name)
+      (structure
+        (value_specification
+          (value_name)
+          (type_constructor_path
+            (type_constructor)))
+        (value_definition
+          (let_binding
+            (value_name)
+            (value_path
+              (value_name))))))))
+
+==============================
+Value specifications in attributes
+==============================
+
+val x : t
+  [@@attr
+    val x : t
+    let x = x
+  ]
+
+---
+
+(compilation_unit
+  (value_specification
+    (value_name)
+    (type_constructor_path
+      (type_constructor))
+    (item_attribute
+      (attribute_id)
+      (attribute_payload
+        (value_specification
+          (value_name)
+          (type_constructor_path
+            (type_constructor)))
+        (value_definition
+          (let_binding
+            (value_name)
+            (value_path
+              (value_name))))))))

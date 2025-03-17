@@ -1,0 +1,206 @@
+===========================
+Class definitions
+===========================
+
+class c = object end;;
+class c x x = object end;;
+class c x x : c = object end;;
+class c : t -> c = object end;;
+class c : t -> t -> c = object end;;
+class c : t * t -> c = object end;;
+
+---
+
+(compilation_unit
+  (class_definition
+    (class_binding
+      (class_name)
+      (object_expression)))
+  (class_definition
+    (class_binding
+      (class_name)
+      (parameter
+        (value_name))
+      (parameter
+        (value_name))
+      (object_expression)))
+  (class_definition
+    (class_binding
+      (class_name)
+      (parameter
+        (value_name))
+      (parameter
+        (value_name))
+      (class_type_path
+        (class_type_name))
+      (object_expression)))
+  (class_definition
+    (class_binding
+      (class_name)
+      (class_function_type
+        (type_constructor_path
+          (type_constructor))
+        (class_type_path
+          (class_type_name)))
+      (object_expression)))
+  (class_definition
+    (class_binding
+      (class_name)
+      (class_function_type
+        (type_constructor_path
+          (type_constructor))
+        (class_function_type
+          (type_constructor_path
+            (type_constructor))
+          (class_type_path
+            (class_type_name))))
+      (object_expression)))
+  (class_definition
+    (class_binding
+      (class_name)
+      (class_function_type
+        (proper_tuple_type
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor)))
+        (class_type_path
+          (class_type_name)))
+      (object_expression))))
+
+===========================
+Class instance variables
+===========================
+
+class c = object
+  val x = x
+  val x : t = x
+  val mutable x : t = x
+end
+
+---
+
+(compilation_unit
+  (class_definition
+    (class_binding
+      (class_name)
+      (object_expression
+        (instance_variable_definition
+          (instance_variable_name)
+          (value_path
+            (value_name)))
+        (instance_variable_definition
+          (instance_variable_name)
+          (type_constructor_path
+            (type_constructor))
+          (value_path
+            (value_name)))
+        (instance_variable_definition
+          (instance_variable_name)
+          (type_constructor_path
+            (type_constructor))
+          (value_path
+            (value_name)))))))
+
+===========================
+Class methods
+===========================
+
+class c = object
+  method x = x
+  method! x = x
+  method f x = x
+  method f (x : t) = x
+end
+
+---
+
+(compilation_unit
+  (class_definition
+    (class_binding
+      (class_name)
+      (object_expression
+        (method_definition
+          (method_name)
+          (value_path
+            (value_name)))
+        (method_definition
+          (method_name)
+          (value_path
+            (value_name)))
+        (method_definition
+          (method_name)
+          (parameter
+            (value_name))
+          (value_path
+            (value_name)))
+        (method_definition
+          (method_name)
+          (parameter
+            (typed_pattern
+              (value_name)
+              (type_constructor_path
+                (type_constructor))))
+          (value_path
+            (value_name)))))))
+
+===========================
+Hash types
+===========================
+
+type t = #c
+type t = t #c
+type t = (t, t) #c
+type t = 'a #c
+type t = _ #c
+type t = ('a, _) #c
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (hash_type
+        (class_type_path
+          (class_type_name)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (hash_type
+        (type_constructor_path
+          (type_constructor))
+        (class_type_path
+          (class_type_name)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (hash_type
+        (type_constructor_path
+          (type_constructor))
+        (type_constructor_path
+          (type_constructor))
+        (class_type_path
+          (class_type_name)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (hash_type
+        (type_variable)
+        (class_type_path
+          (class_type_name)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (hash_type
+        (type_constructor_path)
+        (class_type_path
+          (class_type_name)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (hash_type
+        (type_variable)
+        (type_constructor_path)
+        (class_type_path
+          (class_type_name))))))

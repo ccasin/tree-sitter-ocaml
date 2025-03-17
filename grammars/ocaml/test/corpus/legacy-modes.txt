@@ -1,0 +1,630 @@
+==============================
+Legacy modes
+==============================
+
+local_ unique_ once_ x;;
+local_ unique_ once_ x; x;;
+local_ unique_ once_ (x; x);;
+local_ unique_ once_ let x = x in x;;
+let local_ unique_ once_ x : t = x;;
+
+---
+
+(compilation_unit
+  (expression_item
+    (mode_legacy_expression
+      (mode_legacy)
+      (mode_legacy_expression
+        (mode_legacy)
+        (mode_legacy_expression
+          (mode_legacy)
+          (value_path
+            (value_name))))))
+  (expression_item
+    (mode_legacy_expression
+      (mode_legacy)
+      (mode_legacy_expression
+        (mode_legacy)
+        (mode_legacy_expression
+          (mode_legacy)
+          (sequence_expression
+            (value_path
+              (value_name))
+            (value_path
+              (value_name)))))))
+  (expression_item
+    (mode_legacy_expression
+      (mode_legacy)
+      (mode_legacy_expression
+        (mode_legacy)
+        (mode_legacy_expression
+          (mode_legacy)
+          (parenthesized_expression
+            (sequence_expression
+              (value_path
+                (value_name))
+              (value_path
+                (value_name))))))))
+  (expression_item
+    (mode_legacy_expression
+      (mode_legacy)
+      (mode_legacy_expression
+        (mode_legacy)
+        (mode_legacy_expression
+          (mode_legacy)
+          (let_expression
+            (value_definition
+              (let_binding
+                (value_name)
+                (value_path
+                  (value_name))))
+            (value_path
+              (value_name)))))))
+  (value_definition
+    (let_binding
+      (mode_legacy)
+      (mode_legacy)
+      (mode_legacy)
+      (value_name)
+      (type_constructor_path
+        (type_constructor))
+      (value_path
+        (value_name)))))
+
+==============================
+Exclave
+==============================
+
+exclave_ x;;
+exclave_ x; x;;
+exclave_ (x; x);;
+
+---
+
+(compilation_unit
+  (expression_item
+    (exclave_legacy_expression
+      (exclave_legacy)
+      (value_path
+        (value_name))))
+  (expression_item
+    (exclave_legacy_expression
+      (exclave_legacy)
+      (sequence_expression
+        (value_path
+          (value_name))
+        (value_path
+          (value_name)))))
+  (expression_item
+    (exclave_legacy_expression
+      (exclave_legacy)
+      (parenthesized_expression
+        (sequence_expression
+          (value_path
+            (value_name))
+          (value_path
+            (value_name)))))))
+
+==============================
+Legacy global mode
+==============================
+
+type t = { global_ x : t }
+
+type t =
+  | A of global_ t * global_ t
+  | A : global_ t -> t
+  | A : 'a. global_ t -> t
+  | A of { global_ x : t }
+  | A : { global_ x : t } -> t
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (record_declaration
+        (field_declaration
+          (modality_legacy)
+          (field_name)
+          (type_constructor_path
+            (type_constructor))))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (variant_declaration
+        (constructor_declaration
+          (constructor_name)
+          (modality_legacy)
+          (type_constructor_path
+            (type_constructor))
+          (modality_legacy)
+          (type_constructor_path
+            (type_constructor)))
+        (constructor_declaration
+          (constructor_name)
+          (modality_legacy)
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor)))
+        (constructor_declaration
+          (constructor_name)
+          (type_variable)
+          (modality_legacy)
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor)))
+        (constructor_declaration
+          (constructor_name)
+          (record_declaration
+            (field_declaration
+              (modality_legacy)
+              (field_name)
+              (type_constructor_path
+                (type_constructor)))))
+        (constructor_declaration
+          (constructor_name)
+          (record_declaration
+            (field_declaration
+              (modality_legacy)
+              (field_name)
+              (type_constructor_path
+                (type_constructor))))
+          (type_constructor_path
+            (type_constructor)))))))
+
+==============================
+Legacy modes in parameters
+==============================
+
+let f (local_ x) (local_ x : t) (local_ (x : t)) = x
+let f ~(local_ x) ~(local_ x : t) = x
+let f ?(local_ x) ?(local_ x : t) = x
+let f ?(local_ x = x) ?(local_ x : t = x) = x
+let f ~x:(local_ x) ~x:(local_ x : t) = x
+let f ?x:(local_ x) ?x:(local_ x : t) = x
+let f ?x:(local_ x = x) ?x:(local_ x : t = x) = x
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (pattern_with_modes_legacy
+          (mode_legacy)
+          (value_name)))
+      (parameter
+        (typed_pattern
+          (mode_legacy)
+          (value_name)
+          (type_constructor_path
+            (type_constructor))))
+      (parameter
+        (pattern_with_modes_legacy
+          (mode_legacy)
+          (typed_pattern
+            (value_name)
+            (type_constructor_path
+              (type_constructor)))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (mode_legacy)
+        (value_pattern))
+      (parameter
+        (mode_legacy)
+        (value_pattern)
+        (type_constructor_path
+          (type_constructor)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (mode_legacy)
+        (value_pattern))
+      (parameter
+        (mode_legacy)
+        (value_pattern)
+        (type_constructor_path
+          (type_constructor)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (mode_legacy)
+        (value_pattern)
+        (value_path
+          (value_name)))
+      (parameter
+        (mode_legacy)
+        (value_pattern)
+        (type_constructor_path
+          (type_constructor))
+        (value_path
+          (value_name)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (pattern_with_modes_legacy
+          (mode_legacy)
+          (value_name)))
+      (parameter
+        (label_name)
+        (typed_pattern
+          (mode_legacy)
+          (value_name)
+          (type_constructor_path
+            (type_constructor))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (pattern_with_modes_legacy
+          (mode_legacy)
+          (value_name)))
+      (parameter
+        (label_name)
+        (typed_pattern
+          (mode_legacy)
+          (value_name)
+          (type_constructor_path
+            (type_constructor))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (mode_legacy)
+        (value_name)
+        (value_path
+          (value_name)))
+      (parameter
+        (label_name)
+        (mode_legacy)
+        (value_name)
+        (type_constructor_path
+          (type_constructor))
+        (value_path
+          (value_name)))
+      (value_path
+        (value_name)))))
+
+==============================
+Legacy modes in polymorphic parameters
+==============================
+
+let f (local_ x : 'a. 'a) = x
+let f ~(local_ x : 'a. 'a) = x
+let f ?(local_ x : 'a. 'a) = x
+let f ?(local_ x : 'a. 'a = x) = x
+let f ~x:(local_ x : 'a. 'a) = x
+let f ?x:(local_ x : 'a. 'a) = x
+let f ?x:(local_ x : 'a. 'a = x) = x
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (polymorphic_typed_pattern
+          (mode_legacy)
+          (value_name)
+          (polymorphic_type
+            (type_variable)
+            (type_variable))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (mode_legacy)
+        (value_pattern)
+        (polymorphic_type
+          (type_variable)
+          (type_variable)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (mode_legacy)
+        (value_pattern)
+        (polymorphic_type
+          (type_variable)
+          (type_variable)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (mode_legacy)
+        (value_pattern)
+        (polymorphic_type
+          (type_variable)
+          (type_variable))
+        (value_path
+          (value_name)))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (polymorphic_typed_pattern
+          (mode_legacy)
+          (value_name)
+          (polymorphic_type
+            (type_variable)
+            (type_variable))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (polymorphic_typed_pattern
+          (mode_legacy)
+          (value_name)
+          (polymorphic_type
+            (type_variable)
+            (type_variable))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (mode_legacy)
+        (value_name)
+        (polymorphic_type
+          (type_variable)
+          (type_variable))
+        (value_path
+          (value_name)))
+      (value_path
+        (value_name)))))
+
+==============================
+Legacy modes in fun expressions
+==============================
+
+fun (local_ x) -> x
+
+---
+
+(compilation_unit
+  (expression_item
+    (fun_expression
+      (parameter
+        (pattern_with_modes_legacy
+          (mode_legacy)
+          (value_name)))
+      (value_path
+        (value_name)))))
+
+==============================
+Legacy modes in list comprehensions
+==============================
+
+[ local_ x for local_ x in local_ x ];;
+[ local_ x for x = local_ x to local_ x ];;
+[ local_ x for x = local_ x downto local_ x ];;
+
+---
+
+(compilation_unit
+  (expression_item
+    (list_expression
+      (comprehension
+        (mode_legacy_expression
+          (mode_legacy)
+          (value_path
+            (value_name)))
+        (comprehension_clause
+          (comprehension_iterator
+            (mode_legacy)
+            (value_name)
+            (mode_legacy_expression
+              (mode_legacy)
+              (value_path
+                (value_name))))))))
+  (expression_item
+    (list_expression
+      (comprehension
+        (mode_legacy_expression
+          (mode_legacy)
+          (value_path
+            (value_name)))
+        (comprehension_clause
+          (comprehension_iterator
+            (value_name)
+            (mode_legacy_expression
+              (mode_legacy)
+              (value_path
+                (value_name)))
+            (mode_legacy_expression
+              (mode_legacy)
+              (value_path
+                (value_name))))))))
+  (expression_item
+    (list_expression
+      (comprehension
+        (mode_legacy_expression
+          (mode_legacy)
+          (value_path
+            (value_name)))
+        (comprehension_clause
+          (comprehension_iterator
+            (value_name)
+            (mode_legacy_expression
+              (mode_legacy)
+              (value_path
+                (value_name)))
+            (mode_legacy_expression
+              (mode_legacy)
+              (value_path
+                (value_name)))))))))
+
+==============================
+Legacy modes in operator definitions
+==============================
+
+let local_ ( + ) = x
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (mode_legacy)
+      (parenthesized_operator
+        (add_operator))
+      (value_path
+        (value_name)))))
+
+==============================
+Legacy modes in function types
+==============================
+
+type t = local_ t -> local_ t
+type t = l:local_ t -> local_ t
+type t = l:local_ t * l:t -> local_ t
+type t = l:local_ (t -> t) -> t
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (mode_legacy)
+        (type_constructor_path
+          (type_constructor))
+        (mode_legacy)
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (mode_legacy)
+          (type_constructor_path
+            (type_constructor)))
+        (mode_legacy)
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (mode_legacy)
+          (proper_tuple_type
+            (type_constructor_path
+              (type_constructor))
+            (label_name)
+            (type_constructor_path
+              (type_constructor))))
+        (mode_legacy)
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (mode_legacy)
+          (parenthesized_type
+            (function_type
+              (type_constructor_path
+                (type_constructor))
+              (type_constructor_path
+                (type_constructor)))))
+        (type_constructor_path
+          (type_constructor))))))
+
+==============================
+Legacy modes with new modes
+==============================
+
+let f (local_ x @ local) = x
+let f (local_ x : t @@ local) = x
+type t = l:local_ t @ local -> local_ t @ local
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (pattern_with_modes_legacy
+          (mode_legacy)
+          (value_name)
+          (at_mode_expr
+            (mode))))
+      (value_path
+        (value_name))))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (typed_pattern
+          (mode_legacy)
+          (value_name)
+          (type_constructor_path
+            (type_constructor))
+          (atat_mode_expr
+            (mode))))
+      (value_path
+        (value_name))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (typed_label
+          (label_name)
+          (mode_legacy)
+          (type_constructor_path
+            (type_constructor)))
+        (at_mode_expr
+          (mode))
+        (mode_legacy)
+        (type_constructor_path
+          (type_constructor))
+        (at_mode_expr
+          (mode))))))

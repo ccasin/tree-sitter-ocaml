@@ -1,0 +1,621 @@
+==============================
+"for ... =" list comprehensions
+==============================
+
+[ a for a = 1 to 10 ]
+[ a for a = 10 downto 1 ]
+[ a for a as b = 10 downto 1 ]
+[ a for a = b + c to M.d () ]
+
+---
+
+(compilation_unit
+  (expression_item
+    (application_expression
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (number)
+              (number)))))
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (number)
+              (number)))))
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (alias_pattern
+                (value_name)
+                (value_name))
+              (number)
+              (number)))))
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (infix_expression
+                (value_path
+                  (value_name))
+                (add_operator)
+                (value_path
+                  (value_name)))
+              (application_expression
+                (value_path
+                  (module_path
+                    (module_name))
+                  (value_name))
+                (unit)))))))))
+
+==============================
+"for ... in" list comprehensions
+==============================
+
+[ a for a in b ]
+[ a for a in M.b ]
+[ a for a in [] ]
+[ f a for a in b ]
+[ a + b for a, b in [] ]
+[ a for [a] in [] ]
+[ a for a as b in [] ]
+[ a for a in b :: c :: [] ]
+[ a for a in [ 1; 2 ] ]
+[ a for a in [| 1; 2 |] ]
+[ a for a in [: 1; 2 :] ]
+
+---
+
+(compilation_unit
+  (expression_item
+    (application_expression
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (value_path
+                (value_name))))))
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (value_path
+                (module_path
+                  (module_name))
+                (value_name))))))
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (list_expression)))))
+      (list_expression
+        (comprehension
+          (application_expression
+            (value_path
+              (value_name))
+            (value_path
+              (value_name)))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (value_path
+                (value_name))))))
+      (list_expression
+        (comprehension
+          (infix_expression
+            (value_path
+              (value_name))
+            (add_operator)
+            (value_path
+              (value_name)))
+          (comprehension_clause
+            (comprehension_iterator
+              (tuple_pattern
+                (value_name)
+                (value_name))
+              (list_expression)))))
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (list_pattern
+                (value_name))
+              (list_expression)))))
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (alias_pattern
+                (value_name)
+                (value_name))
+              (list_expression)))))
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (cons_expression
+                (value_path
+                  (value_name))
+                (cons_expression
+                  (value_path
+                    (value_name))
+                  (list_expression)))))))
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (list_expression
+                (number)
+                (number))))))
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (array_expression
+                (number)
+                (number))))))
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (iarray_expression
+                (number)
+                (number)))))))))
+
+==============================
+List comprehensions with multiple clauses
+==============================
+
+[ () for a = 1 to 10 and b in [] and c = 10 downto 1 and d in [] ]
+[ () for a in [] and b in [] for c in [] and d in [] ]
+[ () for a in [] and b in [] for c in [] and d in [] for e in [] and f in [] ]
+
+---
+
+(compilation_unit
+  (expression_item
+    (application_expression
+      (list_expression
+        (comprehension
+          (unit)
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (number)
+              (number))
+            (comprehension_iterator
+              (value_name)
+              (list_expression))
+            (comprehension_iterator
+              (value_name)
+              (number)
+              (number))
+            (comprehension_iterator
+              (value_name)
+              (list_expression)))))
+      (list_expression
+        (comprehension
+          (unit)
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (list_expression))
+            (comprehension_iterator
+              (value_name)
+              (list_expression)))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (list_expression))
+            (comprehension_iterator
+              (value_name)
+              (list_expression)))))
+      (list_expression
+        (comprehension
+          (unit)
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (list_expression))
+            (comprehension_iterator
+              (value_name)
+              (list_expression)))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (list_expression))
+            (comprehension_iterator
+              (value_name)
+              (list_expression)))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (list_expression))
+            (comprehension_iterator
+              (value_name)
+              (list_expression))))))))
+
+==============================
+Nested list comprehension
+==============================
+
+[ a for a in [ b for b in [ c for c in [] ] and _ in [] ] and _ in [] ]
+
+---
+
+(compilation_unit
+  (expression_item
+    (list_expression
+      (comprehension
+        (value_path
+          (value_name))
+        (comprehension_clause
+          (comprehension_iterator
+            (value_name)
+            (list_expression
+              (comprehension
+                (value_path
+                  (value_name))
+                (comprehension_clause
+                  (comprehension_iterator
+                    (value_name)
+                    (list_expression
+                      (comprehension
+                        (value_path
+                          (value_name))
+                        (comprehension_clause
+                          (comprehension_iterator
+                            (value_name)
+                            (list_expression))))))
+                  (comprehension_iterator
+                    (value_name)
+                    (list_expression))))))
+          (comprehension_iterator
+            (value_name)
+            (list_expression)))))))
+
+==============================
+List comprehension with an "and" that isn't part of the comprehension
+==============================
+
+[ () for a in [] and b in let x = 1 and y = 1 in [] and c in [] ]
+
+---
+
+(compilation_unit
+  (expression_item
+    (list_expression
+      (comprehension
+        (unit)
+        (comprehension_clause
+          (comprehension_iterator
+            (value_name)
+            (list_expression))
+          (comprehension_iterator
+            (value_name)
+            (let_expression
+              (value_definition
+                (let_binding
+                  (value_name)
+                  (number))
+                (let_binding
+                  (value_name)
+                  (number)))
+              (list_expression)))
+          (comprehension_iterator
+            (value_name)
+            (list_expression)))))))
+
+==============================
+List comprehensions with "when"
+==============================
+
+[ a for a = 1 to 10 when true ]
+[ () for a in [] when true for b in [] when true ]
+
+---
+
+(compilation_unit
+  (expression_item
+    (application_expression
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (number)
+              (number)))
+          (comprehension_clause
+            (boolean))))
+      (list_expression
+        (comprehension
+          (unit)
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (list_expression)))
+          (comprehension_clause
+            (boolean))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (list_expression)))
+          (comprehension_clause
+            (boolean)))))))
+
+==============================
+Local open comprehensions
+==============================
+
+T.[ b for b in a ]
+T.[| b for b in a |]
+T.[: b for b in a :]
+
+---
+
+(compilation_unit
+  (expression_item
+    (application_expression
+      (local_open_expression
+        (module_path
+          (module_name))
+        (list_expression
+          (comprehension
+            (value_path
+              (value_name))
+            (comprehension_clause
+              (comprehension_iterator
+                (value_name)
+                (value_path
+                  (value_name)))))))
+      (local_open_expression
+        (module_path
+          (module_name))
+        (array_expression
+          (comprehension
+            (value_path
+              (value_name))
+            (comprehension_clause
+              (comprehension_iterator
+                (value_name)
+                (value_path
+                  (value_name)))))))
+      (local_open_expression
+        (module_path
+          (module_name))
+        (iarray_expression
+          (comprehension
+            (value_path
+              (value_name))
+            (comprehension_clause
+              (comprehension_iterator
+                (value_name)
+                (value_path
+                  (value_name))))))))))
+
+==============================
+List comprehensions with attributes
+==============================
+
+[ a for [@attr] a in b ]
+[ a + b for [@attr] a in [] and [@attr] b in [] ]
+[ a for [@attr] a = 1 to 10 ]
+[ a + b for [@attr] a = 1 to 10 and [@attr] b = 10 downto 1 ]
+
+---
+
+(compilation_unit
+  (expression_item
+    (application_expression
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (attribute
+              (attribute_id))
+            (comprehension_iterator
+              (value_name)
+              (value_path
+                (value_name))))))
+      (list_expression
+        (comprehension
+          (infix_expression
+            (value_path
+              (value_name))
+            (add_operator)
+            (value_path
+              (value_name)))
+          (comprehension_clause
+            (attribute
+              (attribute_id))
+            (comprehension_iterator
+              (value_name)
+              (list_expression))
+            (attribute
+              (attribute_id))
+            (comprehension_iterator
+              (value_name)
+              (list_expression)))))
+      (list_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (attribute
+              (attribute_id))
+            (comprehension_iterator
+              (value_name)
+              (number)
+              (number)))))
+      (list_expression
+        (comprehension
+          (infix_expression
+            (value_path
+              (value_name))
+            (add_operator)
+            (value_path
+              (value_name)))
+          (comprehension_clause
+            (attribute
+              (attribute_id))
+            (comprehension_iterator
+              (value_name)
+              (number)
+              (number))
+            (attribute
+              (attribute_id))
+            (comprehension_iterator
+              (value_name)
+              (number)
+              (number))))))))
+
+==============================
+Array comprehensions
+==============================
+
+[| a for a = 1 to 10 |]
+[| a for a in [] |]
+[| a for a in [||] |]
+[| () for a = 10 downto 1 and b in [] for c in [] |]
+
+---
+
+(compilation_unit
+  (expression_item
+    (application_expression
+      (array_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (number)
+              (number)))))
+      (array_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (list_expression)))))
+      (array_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (array_expression)))))
+      (array_expression
+        (comprehension
+          (unit)
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (number)
+              (number))
+            (comprehension_iterator
+              (value_name)
+              (list_expression)))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (list_expression))))))))
+
+==============================
+iarray comprehensions
+==============================
+
+[: a for a = 1 to 10 :]
+[: a for a in [] :]
+[: a for a in [::] :]
+[: () for a = 10 downto 1 and b in [] for c in [] :]
+
+---
+
+(compilation_unit
+  (expression_item
+    (application_expression
+      (iarray_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (number)
+              (number)))))
+      (iarray_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (list_expression)))))
+      (iarray_expression
+        (comprehension
+          (value_path
+            (value_name))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (iarray_expression)))))
+      (iarray_expression
+        (comprehension
+          (unit)
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (number)
+              (number))
+            (comprehension_iterator
+              (value_name)
+              (list_expression)))
+          (comprehension_clause
+            (comprehension_iterator
+              (value_name)
+              (list_expression))))))))

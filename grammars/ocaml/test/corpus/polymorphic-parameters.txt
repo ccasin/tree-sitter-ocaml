@@ -1,0 +1,295 @@
+============================
+Positional polymorphic parameters
+============================
+
+let f (_ : 'a. 'a) = ()
+let f (_ as g : 'a. 'a) = ()
+let f ((x : int) : 'a. 'a) = ()
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (polymorphic_typed_pattern
+          (value_name)
+          (polymorphic_type
+            (type_variable)
+            (type_variable))))
+      (unit)))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (polymorphic_typed_pattern
+          (alias_pattern
+            (value_name)
+            (value_name))
+          (polymorphic_type
+            (type_variable)
+            (type_variable))))
+      (unit)))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (polymorphic_typed_pattern
+          (typed_pattern
+            (value_name)
+            (type_constructor_path
+              (type_constructor)))
+          (polymorphic_type
+            (type_variable)
+            (type_variable))))
+      (unit))))
+
+============================
+Labeled polymorphic parameters
+============================
+
+let f ~(g : 'a. 'a) = ()
+let f ~g:(_ : 'a. 'a) = ()
+let f ~g:((x : int) : 'a. 'a) = ()
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (value_pattern)
+        (polymorphic_type
+          (type_variable)
+          (type_variable)))
+      (unit)))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (polymorphic_typed_pattern
+          (value_name)
+          (polymorphic_type
+            (type_variable)
+            (type_variable))))
+      (unit)))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (polymorphic_typed_pattern
+          (typed_pattern
+            (value_name)
+            (type_constructor_path
+              (type_constructor)))
+          (polymorphic_type
+            (type_variable)
+            (type_variable))))
+      (unit))))
+
+============================
+Optional polymorphic parameters
+============================
+
+let f ?(g : 'a. 'a) = ()
+let f ?(g : 'a. 'a = default) = ()
+let f ?g:(_ : 'a. 'a) = ()
+let f ?g:(_ : 'a. 'a = ()) = ()
+
+---
+
+(compilation_unit
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (value_pattern)
+        (polymorphic_type
+          (type_variable)
+          (type_variable)))
+      (unit)))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (value_pattern)
+        (polymorphic_type
+          (type_variable)
+          (type_variable))
+        (value_path
+          (value_name)))
+      (unit)))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (polymorphic_typed_pattern
+          (value_name)
+          (polymorphic_type
+            (type_variable)
+            (type_variable))))
+      (unit)))
+  (value_definition
+    (let_binding
+      (value_name)
+      (parameter
+        (label_name)
+        (value_name)
+        (polymorphic_type
+          (type_variable)
+          (type_variable))
+        (unit))
+      (unit))))
+
+============================
+Polymorphic parameters in fun expressions
+============================
+
+fun (_ : 'a. 'a) -> ()
+
+---
+
+(compilation_unit
+  (expression_item
+    (fun_expression
+      (parameter
+        (polymorphic_typed_pattern
+          (value_name)
+          (polymorphic_type
+            (type_variable)
+            (type_variable))))
+      (unit))))
+
+============================
+Polymorphic parameters in class functions
+============================
+
+class c (_ : 'a. 'a) = object end;;
+class c = fun (_ : 'a. 'a) -> object end;;
+
+---
+
+(compilation_unit
+  (class_definition
+    (class_binding
+      (class_name)
+      (parameter
+        (polymorphic_typed_pattern
+          (value_name)
+          (polymorphic_type
+            (type_variable)
+            (type_variable))))
+      (object_expression)))
+  (class_definition
+    (class_binding
+      (class_name)
+      (class_function
+        (parameter
+          (polymorphic_typed_pattern
+            (value_name)
+            (polymorphic_type
+              (type_variable)
+              (type_variable))))
+        (object_expression)))))
+
+============================
+Polymorphic parameters in methods
+============================
+
+class c = object
+  method m (_ : 'a. 'a) = ()
+end
+
+---
+
+(compilation_unit
+  (class_definition
+    (class_binding
+      (class_name)
+      (object_expression
+        (method_definition
+          (method_name)
+          (parameter
+            (polymorphic_typed_pattern
+              (value_name)
+              (polymorphic_type
+                (type_variable)
+                (type_variable))))
+          (unit))))))
+
+===========================
+Polymorphic parameters in types
+===========================
+
+type t = ('a. 'a) -> t;;
+type t = ?l:('a. 'a) -> t;;
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (polymorphic_type
+          (type_variable)
+          (type_variable))
+        (type_constructor_path
+          (type_constructor)))))
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (function_type
+        (polymorphic_typed_label
+          (label_name)
+          (polymorphic_type
+            (type_variable)
+            (type_variable)))
+        (type_constructor_path
+          (type_constructor))))))
+
+===========================
+Polymorphic parameters in module type definitions
+===========================
+
+module type T = T with type t := ('a. 'a) -> t
+module type T = T with type t := l:('a. 'a) -> t
+
+---
+
+(compilation_unit
+  (module_type_definition
+    (module_type_name)
+    (module_type_constraint
+      (module_type_path
+        (module_type_name))
+      (constrain_type
+        (type_constructor_path
+          (type_constructor))
+        (function_type
+          (polymorphic_type
+            (type_variable)
+            (type_variable))
+          (type_constructor_path
+            (type_constructor))))))
+  (module_type_definition
+    (module_type_name)
+    (module_type_constraint
+      (module_type_path
+        (module_type_name))
+      (constrain_type
+        (type_constructor_path
+          (type_constructor))
+        (function_type
+          (polymorphic_typed_label
+            (label_name)
+            (polymorphic_type
+              (type_variable)
+              (type_variable)))
+          (type_constructor_path
+            (type_constructor)))))))

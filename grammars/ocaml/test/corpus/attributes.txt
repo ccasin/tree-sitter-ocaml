@@ -37,7 +37,7 @@ Floating attributes
     (attribute_payload
       (constructor_pattern
         (constructor_path (constructor_name))
-        (value_pattern)))))
+        (value_name)))))
 
 ===========================
 Item attributes

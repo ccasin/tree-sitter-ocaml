@@ -1,0 +1,105 @@
+===========================
+Unboxed tuple types
+===========================
+
+type t = #(t * t)
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (ERROR)
+      (parenthesized_type
+        (proper_tuple_type
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor)))))))
+
+===========================
+More unboxed constants
+===========================
+
+#();;
+#0b;;
+#0s;;
+
+---
+
+(compilation_unit
+  (ERROR)
+  (expression_item
+    (unit))
+  (expression_item
+    (application_expression
+      (unboxed_constant)
+      (value_path
+        (value_name))))
+  (expression_item
+    (unboxed_constant)))
+
+===========================
+Unboxed records
+===========================
+
+type t = #{ f : t; f : t# }
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (ERROR)
+      (record_declaration
+        (field_declaration
+          (field_name)
+          (type_constructor_path
+            (type_constructor)))
+        (field_declaration
+          (field_name)
+          (unboxed_type_constructor_path
+            (type_constructor)))))))
+
+===========================
+Unboxed variant types
+===========================
+
+type t = #( A of t | B of t )
+type t = #( | A of t | B of t )
+
+---
+
+(compilation_unit
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (ERROR
+        (ERROR)
+        (constructed_type
+          (type_constructor_path
+            (type_constructor))
+          (type_constructor_path
+            (type_constructor))))
+      (variant_declaration
+        (constructor_declaration
+          (constructor_name)
+          (type_constructor_path
+            (type_constructor))))))
+  (ERROR)
+  (type_definition
+    (type_binding
+      (type_constructor)
+      (ERROR)
+      (variant_declaration
+        (constructor_declaration
+          (constructor_name)
+          (type_constructor_path
+            (type_constructor)))
+        (constructor_declaration
+          (constructor_name)
+          (type_constructor_path
+            (type_constructor))))))
+  (ERROR))
